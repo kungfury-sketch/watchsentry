@@ -8,19 +8,22 @@ No personal information about the operator appears on any public-facing surface.
 
 ## Standing checklist
 
-- [ ] Domain WHOIS — Cloudflare Registrar, privacy ON (default-on; confirm in cart at purchase time)
-- [ ] CWS developer profile display name — `WatchSentry`, not real name
-- [ ] CWS support email — `support@watchsentry.app` (backed by Cloudflare Email Routing to private inbox)
-- [ ] GitHub repo visibility — PRIVATE
-- [ ] Git author email — `<id>+kungfury-sketch@users.noreply.github.com`
-- [ ] Git author name — `WatchSentry Bot`
-- [ ] GitHub `kungfury-sketch` profile — brand-only (no real name in profile name, bio, gravatar, public email)
-- [ ] Landing page footer — brand only, no operator name
-- [ ] Privacy policy contact — brand email only
-- [ ] Terms of service signing party — brand entity name, no real name
-- [ ] Any tracking/analytics — internal only, never publicly exposed dashboards
-- [ ] Cloudflare account profile — fine as-is (internal)
-- [ ] Lemon Squeezy (Phase 1) — brand product page; real KYC kept internal
+**Status as of 2026-05-18 (end of Session 0):**
+
+- [x] Domain WHOIS — Cloudflare Registrar, privacy ON. `watchsentry.app` registered 2026-05-18 with default WHOIS privacy.
+- [x] CWS developer profile display name — `WatchSentry`. Registered 2026-05-18.
+- [x] CWS support email — `support@watchsentry.app` (verified via Cloudflare Email Routing → forwards to private gmail inbox).
+- [x] GitHub repo visibility — PRIVATE. Confirmed at https://github.com/kungfury-sketch/watchsentry.
+- [x] Git author email — `264698993+kungfury-sketch@users.noreply.github.com`. Verified via `git log --pretty=fuller` across all commits.
+- [x] Git author name — `WatchSentry Bot`. Verified across all commits.
+- [x] GitHub `kungfury-sketch` profile — brand-only. User-confirmed: no real name in profile name, no gravatar, no personal bio, no public email.
+- [ ] Landing page footer — brand only, no operator name. **NOT APPLICABLE YET** (landing/ folder not created until Week 5, Task 5.1).
+- [ ] Privacy policy contact — brand email only. **NOT APPLICABLE YET** (Week 5, Task 5.1).
+- [ ] Terms of service signing party — brand entity name, no real name. **NOT APPLICABLE YET** (Week 5).
+- [x] Any tracking/analytics — internal only, never publicly exposed dashboards. Pattern locked: Cloudflare Web Analytics (free, privacy-respecting) when landing site goes live; no third-party analytics SDKs.
+- [x] Cloudflare account profile — fine as-is (internal). Login email visible only via `wrangler whoami`; account-level resources require authentication to view.
+- [ ] Lemon Squeezy (Phase 1) — brand product page; real KYC kept internal. **NOT APPLICABLE YET** (Phase 1, post-Phase-0-launch).
+- [x] eBay Developer App — `WatchSentry` as app name, `support@watchsentry.app` as compliance contact. Registered 2026-05-18, awaiting eBay activation (~24h).
 
 ## Re-run triggers
 
