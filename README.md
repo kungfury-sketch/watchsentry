@@ -12,7 +12,7 @@ This is a monorepo. Each top-level folder is independently buildable/deployable.
 |---|---|
 | `extension/` | The Chrome extension itself (manifest v3, Vite + crxjs, TypeScript, Preact). |
 | `workers/` | Cloudflare Workers API (Hono) + D1 migrations + Cron triggers. Backend for the extension. |
-| `landing/` | The watchsentry.com static site (Cloudflare Pages). Privacy policy, terms, mailing list. |
+| `landing/` | The watchsentry.app static site (Cloudflare Pages). Privacy policy, terms, mailing list. |
 | `cws/` | Chrome Web Store submission assets: listing copy, screenshots. Demo videos are NOT committed (binary, large). |
 | `docs/` | Plans, design records, anonymity audit, runbooks. |
 | `progress/` | Per-work-session log. |
@@ -24,7 +24,7 @@ This repo is private and the project is proprietary (see `LICENSE`). External co
 
 ## Contact
 
-`support@watchsentry.com`
+`support@watchsentry.app`
 
 ---
 

@@ -49,7 +49,7 @@ The final folder layout differs from the path examples in early tasks below. Use
 
 **Brand name + domain.** Several Week 1 + Week 5 tasks depend on this.
 
-**Recommendation:** accept `WatchSentry` as the working name and `watchsentry.com` (or `.app` if `.com` is taken) as the domain. Risk of needing to rename later is low; folder/repo/account renames are mechanical. If the user wants a different name, pause at Task 1.2 and the rest of Week 1 unblocks immediately once a name is chosen.
+**Recommendation:** accept `WatchSentry` as the working name and `watchsentry.app` (or `.app` if `.com` is taken) as the domain. Risk of needing to rename later is low; folder/repo/account renames are mechanical. If the user wants a different name, pause at Task 1.2 and the rest of Week 1 unblocks immediately once a name is chosen.
 
 ---
 
@@ -75,7 +75,7 @@ Every public-facing surface needs a mitigation. Audit BEFORE shipping any artifa
 
 - [ ] Domain WHOIS — Cloudflare Registrar, privacy ON (default)
 - [ ] CWS developer profile display name — brand, not real name
-- [ ] CWS support email — `support@watchsentry.com`
+- [ ] CWS support email — `support@watchsentry.app`
 - [ ] GitHub repo — private
 - [ ] Git author email — `<id>+<gh-username>@users.noreply.github.com`
 - [ ] Git author name — `WatchSentry Bot`
@@ -103,7 +103,7 @@ If user has not chosen a name, accept `WatchSentry` as the working name. Documen
 
 **Step 2: Check `.com` and `.app` availability via Cloudflare Registrar**
 
-Do this manually in the Cloudflare dashboard: Domain Registration → Register Domain → search `watchsentry.com`, `watchsentry.app`, `watch-sentry.com`, `watchsentry.io`. Note prices and availability.
+Do this manually in the Cloudflare dashboard: Domain Registration → Register Domain → search `watchsentry.app`, `watchsentry.app`, `watch-sentry.com`, `watchsentry.io`. Note prices and availability.
 
 **Step 3: DO NOT buy yet**
 
@@ -2470,7 +2470,7 @@ git -C C:\omerprojects\watchsentry push
       <button type="submit">Notify me</button>
     </form>
     <footer>
-      <p><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="mailto:support@watchsentry.com">support@watchsentry.com</a></p>
+      <p><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="mailto:support@watchsentry.app">support@watchsentry.app</a></p>
       <p style="font-size: 11px; color: #888">WatchSentry is an independent tool and is not affiliated with Chrono24, eBay, or any watch brand.</p>
     </footer>
   </main>
@@ -2509,7 +2509,7 @@ git -C C:\omerprojects\watchsentry push
 <p>Our backend runs on Cloudflare. Pricing data comes from eBay's public Browse API. Neither service receives your anonymous ID or any data that could identify you.</p>
 
 <h2>Contact</h2>
-<p>Privacy questions: <a href="mailto:support@watchsentry.com">support@watchsentry.com</a></p>
+<p>Privacy questions: <a href="mailto:support@watchsentry.app">support@watchsentry.app</a></p>
 </main>
 </body>
 </html>
@@ -2539,7 +2539,7 @@ git -C C:\omerprojects\watchsentry push
 <p>We may update these terms at any time. Continued use after an update constitutes acceptance.</p>
 
 <h2>Contact</h2>
-<p><a href="mailto:support@watchsentry.com">support@watchsentry.com</a></p>
+<p><a href="mailto:support@watchsentry.app">support@watchsentry.app</a></p>
 </main>
 </body>
 </html>
@@ -2667,11 +2667,11 @@ Shopping
 English
 
 ## Privacy policy URL
-https://watchsentry.com/privacy.html
+https://watchsentry.app/privacy.html
 (or .pages.dev URL until domain go-live)
 
 ## Support URL
-mailto:support@watchsentry.com
+mailto:support@watchsentry.app
 
 ## Permissions justification
 - `storage`: stores user settings (enable toggle) + an anonymous random ID. Never personal data.
@@ -2716,10 +2716,10 @@ For each row in `docs/anonymity-audit.md`, confirm:
 
 1. **Domain WHOIS** — domain not yet bought (Task 6.3). Confirm Cloudflare Registrar privacy is default-on when buying.
 2. **CWS developer profile display name** — dev account not yet registered (Task 6.1). Plan to use brand name only.
-3. **CWS support email** — `support@watchsentry.com` requires domain MX first; if domain not yet bought at submission time, temporarily use a Cloudflare Email Routing forwarder once domain lands (Task 6.4). FOR INITIAL CWS SUBMISSION ONLY, can use `<gh-username>@users.noreply.github.com` — flag this as audit debt to swap before publishing.
+3. **CWS support email** — `support@watchsentry.app` requires domain MX first; if domain not yet bought at submission time, temporarily use a Cloudflare Email Routing forwarder once domain lands (Task 6.4). FOR INITIAL CWS SUBMISSION ONLY, can use `<gh-username>@users.noreply.github.com` — flag this as audit debt to swap before publishing.
 4. **GitHub repo** — verify `Settings → Visibility → Private`. Verify `git log -1 --pretty=fuller` shows `WatchSentry Bot` author.
 5. **Git author email** — `git log -p | grep -v noreply | grep -E "@(gmail|yahoo|hotmail|outlook|protonmail)"` should return empty. If anything personal leaks, rewrite history before pushing (use `git filter-repo` — destructive; user-approved only).
-6. **Landing page footer/contact** — visual check: `support@watchsentry.com` is the only email; no operator name appears.
+6. **Landing page footer/contact** — visual check: `support@watchsentry.app` is the only email; no operator name appears.
 7. **Privacy policy contact** — same.
 8. **Terms signing party** — currently says "We" — leave as-is for individual-operator brand; do NOT add personal name.
 9. **Cloudflare account profile** — internal-only; OK.
@@ -2762,7 +2762,7 @@ git -C C:\omerprojects\watchsentry push
 
 **Step 3:** In Developer profile, set:
 - **Publisher display name:** WatchSentry
-- **Publisher contact email:** `support@watchsentry.com` (defer setup if domain not yet purchased — see Task 5.4 audit debt)
+- **Publisher contact email:** `support@watchsentry.app` (defer setup if domain not yet purchased — see Task 5.4 audit debt)
 
 **Step 4:** Optional but recommended: set up a Group Publisher if you anticipate ever transferring ownership.
 
@@ -2803,40 +2803,40 @@ Typical CWS review = 3–14 days. While waiting, work on Task 6.3 + 6.4.
 
 **Step 1: Confirm name availability + purchase**
 
-Cloudflare dashboard → Domain Registration → register `watchsentry.com` (or your chosen variant). WHOIS privacy default-on — verify in cart before paying.
+Cloudflare dashboard → Domain Registration → register `watchsentry.app` (or your chosen variant). WHOIS privacy default-on — verify in cart before paying.
 
 Cost: ~$9-15/yr.
 
 **Step 2: Connect to Pages**
 
-Cloudflare dashboard → Pages → `watchsentry-landing` → Custom domains → Add `watchsentry.com` and `www.watchsentry.com`. DNS records auto-populated since the domain is also on Cloudflare.
+Cloudflare dashboard → Pages → `watchsentry-landing` → Custom domains → Add `watchsentry.app` and `www.watchsentry.app`. DNS records auto-populated since the domain is also on Cloudflare.
 
 **Step 3: Verify TLS + redirect**
 
 After DNS propagates (typically <5 min on CF-to-CF), check:
-- `https://watchsentry.com/` loads
-- `https://watchsentry.com/privacy.html` loads
-- `http://watchsentry.com/` redirects to HTTPS
+- `https://watchsentry.app/` loads
+- `https://watchsentry.app/privacy.html` loads
+- `http://watchsentry.app/` redirects to HTTPS
 
 **Step 4: Update CWS listing privacy/support URLs**
 
-Edit CWS listing → privacy policy URL → `https://watchsentry.com/privacy.html`. Save (will trigger another short review).
+Edit CWS listing → privacy policy URL → `https://watchsentry.app/privacy.html`. Save (will trigger another short review).
 
 ---
 
-### Task 6.4 — Email routing for support@watchsentry.com
+### Task 6.4 — Email routing for support@watchsentry.app
 
 **Step 1: Cloudflare dashboard → Email Routing → Enable → set destination address to user's personal email (this is internal-only, NOT public).**
 
-**Step 2: Create routing rule: `support@watchsentry.com` → user's personal email.**
+**Step 2: Create routing rule: `support@watchsentry.app` → user's personal email.**
 
 **Step 3: Smoke**
 
-Send a test email to `support@watchsentry.com`; verify it arrives at user's inbox.
+Send a test email to `support@watchsentry.app`; verify it arrives at user's inbox.
 
 **Step 4: Re-audit anonymity**
 
-The `support@` address is now public. The DESTINATION is private (Cloudflare-only mapping). Document this in `docs/anonymity-audit.md` as a resolved item: "audit debt resolved: CWS support email is now `support@watchsentry.com` backed by Cloudflare Email Routing."
+The `support@` address is now public. The DESTINATION is private (Cloudflare-only mapping). Document this in `docs/anonymity-audit.md` as a resolved item: "audit debt resolved: CWS support email is now `support@watchsentry.app` backed by Cloudflare Email Routing."
 
 ```powershell
 git -C C:\omerprojects\watchsentry commit -am "audit: support@ email routing live; CWS submission updated"
@@ -2849,7 +2849,7 @@ git -C C:\omerprojects\watchsentry push
 
 - [ ] CWS submission accepted (Pending Review or Published)
 - [ ] Domain registered, WHOIS-private
-- [ ] Landing page live on `watchsentry.com`
+- [ ] Landing page live on `watchsentry.app`
 - [ ] Email routing live; `support@` arrives at user's inbox
 - [ ] No personal info found in CWS listing, landing page, repo
 - [ ] Session log updated
@@ -2913,7 +2913,7 @@ Add a "Launch Addendum" section to the session log:
 
 - CWS published: <link>
 - Cloudflare Workers URL: <url>
-- Domain: watchsentry.com
+- Domain: watchsentry.app
 - D1 db: `watchsentry-db` (production)
 - Day-1 installs: <n>
 - Day-1 review count: <n>
@@ -3002,7 +3002,7 @@ Re-run the audit at end of Week 5 (Task 5.4) AND any time the following happens:
 |---|---|---|
 | eBay API rate-limit hit | Cron run inserts < expected; audit log shows 429 errors | Halve cron frequency to every-other-day; or batch refs across 2 days |
 | Chrono24 sends C&D for any scraping (server-side only) | Email notice | Remove any server-side Chrono24 crawl; ext-only reads remain (logged-in user view); reply professionally; document in audit log |
-| CWS removes extension | Email from Google | Read removal reason; fix; resubmit. Backup distribution: serve as unlisted CRX from `watchsentry.com/unlisted` (less discoverable, still installable for users who hold link) |
+| CWS removes extension | Email from Google | Read removal reason; fix; resubmit. Backup distribution: serve as unlisted CRX from `watchsentry.app/unlisted` (less discoverable, still installable for users who hold link) |
 | Lemon Squeezy KYC rejects (Phase 1) | Email from LS | Pivot billing to Paddle (similar MoR; less strict KYC) or Freemius (Chrome-ext specialist) |
 | D1 free tier exceeded | Cloudflare dashboard alert | Migrate to D1 paid (\$5/mo) — already budgeted for Phase 1 |
 | Daily-cap counter prevents legitimate use | User reports | Raise from 50 to 100 in config; revisit in Phase 1 when paid tier ships |
@@ -3012,7 +3012,7 @@ Re-run the audit at end of Week 5 (Task 5.4) AND any time the following happens:
 ## Open questions for user (resolve as needed during execution)
 
 1. **Final brand name** (default `WatchSentry`)
-2. **Final domain** (default `watchsentry.com`)
+2. **Final domain** (default `watchsentry.app`)
 3. **CWS publisher display name** (default brand name)
 4. **Test runner / lint** (default Vitest + Biome — swap if preferred)
 5. **UI lib** (default Preact + vanilla state — swap if preferred)

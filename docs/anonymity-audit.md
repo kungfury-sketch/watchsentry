@@ -10,7 +10,7 @@ No personal information about the operator appears on any public-facing surface.
 
 - [ ] Domain WHOIS — Cloudflare Registrar, privacy ON (default-on; confirm in cart at purchase time)
 - [ ] CWS developer profile display name — `WatchSentry`, not real name
-- [ ] CWS support email — `support@watchsentry.com` (backed by Cloudflare Email Routing to private inbox)
+- [ ] CWS support email — `support@watchsentry.app` (backed by Cloudflare Email Routing to private inbox)
 - [ ] GitHub repo visibility — PRIVATE
 - [ ] Git author email — `<id>+kungfury-sketch@users.noreply.github.com`
 - [ ] Git author name — `WatchSentry Bot`
