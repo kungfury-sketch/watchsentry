@@ -155,32 +155,149 @@ This section supersedes any earlier "Next session entry point" content above.
 
 ---
 
-## Session 1 entry-point checklist (READ THIS FIRST NEXT SESSION)
+## Session 1 — eBay-unblocked backend + Chrome extension foundation (2026-05-19)
 
-1. Auto-load `MEMORY.md` (the harness does this automatically).
-2. Read the "Session 0 — FINAL CLOSEOUT" section of this file (above).
-3. Quick reference: read `docs/plans/2026-05-18-phase0-implementation-plan.md` for the full task list.
-4. Check eBay secrets state:
+**Hours:** ~4 (autonomous; user only confirmed direction twice).
+**Mode:** subagent-driven-development not used (tasks sequential); TDD + executing-plans skills active.
+
+### Context entering session
+
+- eBay Developer App registered Session 0; still awaiting activation (~24h ETA confirmed, but not yet activated as of session start).
+- Tasks 2.4 / 2.7 / 2.8 remain eBay-gated. Tasks 2.5 + 2.6 + all of Week 3 are NOT eBay-gated.
+- User asked "what can we do in the meantime?" → chose Tasks 2.5 + 2.6 with mocked eBay.
+- User then said "if you can continue safely without requiring me to do anything, continue" → autonomous run through Week 3.
+
+### Tasks completed (6 plan tasks)
+
+| Task | Plan section | Files | Commit |
+|---|---|---|---|
+| 2.5 | Fair-value weighted-median calc | `workers/src/fair-value.ts`, `workers/tests/fair-value.test.ts` | `9b765bf` |
+| 2.6 + prereq | D1 repo module + ebay.ts type-only stub | `workers/src/repo.ts`, `workers/src/ebay.ts` | `b0e07f0` |
+| 3.1 | Extension scaffold (Vite+crxjs+Preact+TS) | `extension/{package,tsconfig,vite,vitest,biome,manifest}.config.*`, src/{content,background,popup}/, icons/ | `566ae7a` |
+| 3.2 | Chrono24 listing parser + synthetic fixture | `extension/src/parsers/chrono24-listing.ts`, `extension/tests/{parsers,fixtures}/` | `5ca61b2` |
+| 3.3 | API client for /enrich | `extension/src/api/client.ts`, `extension/tests/api/client.test.ts` | `0b0a370` |
+| 3.4 | Badge component + content-script injection | `extension/src/components/Badge.{tsx,css}`, modified `extension/src/content/index.tsx` | `1e1bece` |
+
+### Deviations from plan (intentional)
+
+1. **`ebay.ts` type stub** — created early because `repo.ts` (Task 2.6) imports `ConditionTier` / `SoldComp` from it, but Task 2.4 is still eBay-gated. Stub contains type-only declarations. Task 2.4 will expand it with `getEbayAppToken` / `fetchEbaySoldComps` / `normalizeCondition` when secrets land. Types match the plan exactly so no churn expected.
+
+2. **`fair-value.ts` fallback path** — plan's `last!.price` non-null assertion violates Biome `noNonNullAssertion`. Replaced with `throw new Error(...)` on the unreachable branch. Safer than `?.` (which would silently emit `NaN`).
+
+3. **`fair-value.ts` signature** auto-collapsed to one line by Biome formatter (cosmetic).
+
+4. **Chrome extension placeholder icons** — manifest declares `icons/{16,48,128}.png`. Created 1×1 transparent PNG placeholders so `vite build` completes. `extension/icons/README.md` flags these for replacement before CWS submission (Week 6 / Task 6.2).
+
+5. **Task 3.2 fixture: SYNTHETIC, not real-page capture** — plan Step 1 requires user to Save As a real Chrono24 listing. Built a synthetic schema.org-compliant `chrono24-listing-rolex-124060.html` instead, to allow autonomous progress. `extension/tests/fixtures/README.md` flags this as a Phase 1 launch blocker — parser must be re-verified against real Chrono24 DOM before paid tier ships.
+
+6. **Step 10 / Step 4 manual smoke skipped** — Task 3.1 Step 10 (load unpacked in Chrome) and Task 3.4 Step 4 (browser smoke). Build produces a valid `dist/` directory; user can load when they choose.
+
+7. **API_BASE placeholder** — `<your-subdomain>.workers.dev` literal placeholder in `content/index.tsx`. Resolves when worker is deployed (Task 2.7, eBay-gated). Until then `enrichListing` fails on DNS → badge falls through to `no_data` UX (correct pre-launch behavior).
+
+### Verification (end-of-session, both packages green)
+
+**Workers:**
+- `npm run typecheck` — clean (no errors)
+- `npm test` — 6/6 passing (4 fair-value + 2 health)
+- `npm run lint` — clean (Biome, 6 files)
+
+**Extension:**
+- `npm run typecheck` — clean (after adding `@types/node` + `types: ["chrome", "node", "vite/client"]`)
+- `npm test` — 6/6 passing (4 parser + 2 client)
+- `npm run lint` — clean (Biome, 9 files; organizeImports auto-applied via `biome check --write`)
+- `npm run build` — clean; `dist/` contains `manifest.json`, content/background/popup bundles, icons, sourcemaps; ~16 KB total (gzipped ~5 KB)
+
+**Anonymity audit refresh:**
+- Extension files: `0 hits` for PII patterns (omer/cil/hotmail/claude/anthropic/gravatar)
+- Workers source: `0 hits`
+- Git author/committer: `WatchSentry Bot` + GitHub noreply — verified
+- New audit-debt entry logged: `C:\omerprojects\` workspace path appears in committed plan + progress + audit docs (pre-existing from Session 0). Action required before repo visibility change.
+
+### Commits pushed to origin/main (6 total this session)
+
+| SHA | Subject |
+|---|---|
+| `9b765bf` | feat(workers): fair-value weighted-median calc |
+| `b0e07f0` | feat(workers): D1 repository module + ebay.ts type stub |
+| `566ae7a` | feat(extension): MV3 scaffold (Vite+crxjs+Preact) |
+| `5ca61b2` | feat(ext): Chrono24 listing parser w/ ld+json |
+| `0b0a370` | feat(ext): API client for /enrich |
+| `1e1bece` | feat(ext): badge component + content-script injection |
+| _(this commit)_ | docs(progress,audit): session 1 log + omerprojects path audit-debt entry |
+
+### State per layer at end of Session 1
+
+| Layer | Status |
+|---|---|
+| Repo `main` | up to date; CI will run on push |
+| D1 `watchsentry-db` | unchanged — 5 tables, 50 seeded refs |
+| KV `watchsentry-cache` | unchanged — empty |
+| Workers code | fair-value + repo modules in tree; not deployed (Task 2.7 eBay-gated) |
+| Workers tests | 6/6 passing |
+| Extension code | full Phase 0 happy-path: parser → API client → badge → content-script injection |
+| Extension tests | 6/6 passing |
+| Extension build | clean; `dist/` produced (16 KB total) |
+| Anonymity | all currently-applicable rows still green; new audit-debt logged |
+| Eternal blockers | eBay App still inactive; Lemon Squeezy KYC deferred to Phase 1 |
+
+### Phase 0 progress: 18/30 tasks done (was 12)
+
+- Week 1: 10/10 ✓
+- Week 2: 4/8 (2.5, 2.6 done; 2.4, 2.7, 2.8 eBay-gated)
+- Week 3: 4/4 ✓ (manual Chrome-load smoke deferred to user)
+- Week 4: 0/4 (Task 4.1 search-results parser could be done autonomously; deferring to keep batch size reasonable)
+- Week 5: 0/4 (privacy/terms docs + landing page copy could be done autonomously)
+- Week 6: 0/4 (user-action only)
+- Week 7: 0/3 (depends on Week 6)
+
+### Outstanding loose ends (none blocking)
+
+- **Synthetic Chrono24 fixture** — flagged Phase 1 launch blocker in `extension/tests/fixtures/README.md`. Parser is correct against schema.org spec but unverified against real Chrono24 DOM.
+- **Placeholder extension icons** — flagged for replacement in `extension/icons/README.md` before CWS submission (Week 6 / Task 6.2).
+- **API_BASE placeholder URL** in `extension/src/content/index.tsx` — resolves at Task 2.7 deploy.
+- **npm audit warnings** — 8 vulnerabilities (6 moderate, 2 high) in dev-only deps after `npm install`. Not blocking; revisit before Phase 1.
+- **`omerprojects` path leak** in committed plan/progress/audit docs — logged in audit-debt; address before any repo visibility change.
+
+---
+
+## Session 2 entry-point checklist (READ THIS FIRST NEXT SESSION)
+
+1. Auto-load `MEMORY.md` (harness does).
+2. Read the "Session 1" section above.
+3. Check eBay secrets state:
    ```powershell
    cd C:\omerprojects\watchsentry\workers
    wrangler secret list
    ```
-   - If `EBAY_APP_ID` + `EBAY_CERT_ID` both shown → proceed to Task 2.4.
-   - If not → confirm eBay status with user; if still not activated, possibly nudge eBay support; if activated but secrets not set, walk user through `wrangler secret put`.
-5. Verify CI still green: `gh run list --limit 1`
-6. Verify Cloudflare state unchanged:
-   ```powershell
-   wrangler d1 info watchsentry-db
-   wrangler kv namespace list
-   ```
-7. **Default first action when unblocked: execute Task 2.4 — eBay API client + tests** (per implementation plan §Task 2.4 in `docs/plans/`).
-8. Then 2.5 (fair-value calc) → 2.6 (D1 repo module) → 2.7 (cron handler + first Workers deploy + live eBay smoke test) → 2.8 (/enrich endpoint with KV cache + zod).
-9. Estimated ~4–6 hrs autonomous work to finish Week 2 backend.
+   - If `EBAY_APP_ID` + `EBAY_CERT_ID` both shown → eBay activated; execute Task 2.4 (eBay API client + tests) → 2.7 (cron + first remote deploy) → 2.8 (/enrich endpoint with KV cache).
+   - If "Worker not found" still → eBay STILL not activated. Pivot to autonomous Week 4-5 prep work (see options below).
+4. **Autonomous options if eBay still blocked:**
+   - Task 4.1: Chrono24 search-results page parser (analogue to 3.2; HTML fixture-based).
+   - Task 4.3: Settings popup + chrome.storage wiring.
+   - Task 4.4 (client side): Anonymous user ID generation + daily-cap counter (server-side cap deferred to Task 2.8).
+   - Task 5.1 partial: Landing page HTML/CSS in `landing/` folder (no deploy).
+   - Task 5.3 partial: CWS listing copy draft in `cws/listing.md`.
+   - Privacy policy + Terms drafts in `docs/legal/` (Phase 1 prerequisite).
+5. **DO NOT** attempt these autonomously:
+   - `wrangler deploy` (real Cloudflare publish; creates public artifact)
+   - `wrangler pages deploy` (same reason)
+   - CWS submission
+   - Lemon Squeezy KYC
+   - Any Chrome Web Store actions
 
-### After Week 2 (looking ahead)
+### Verification commands cheat-sheet
 
-- Week 3: Chrome extension scaffold (Vite + crxjs + Preact + TS) + Chrono24 DOM parser.
-- Week 4: Search-results page support + settings popup + anonymous user ID + daily cap.
-- Week 5: Landing page on Cloudflare Pages + privacy/terms + CWS listing copy + 5 screenshots + demo video + anonymity audit checkpoint.
-- Week 6: Submit ext to CWS + connect `watchsentry.app` to Pages.
-- Week 7: Address CWS review feedback + go-live + 48-hr monitoring.
+```powershell
+# Workers
+cd C:\omerprojects\watchsentry\workers
+npm run typecheck && npm test && npm run lint
+
+# Extension
+cd C:\omerprojects\watchsentry\extension
+npm run typecheck && npm test && npm run lint && npm run build
+
+# Git state
+cd C:\omerprojects\watchsentry
+git status --short
+git log --oneline -10
+```

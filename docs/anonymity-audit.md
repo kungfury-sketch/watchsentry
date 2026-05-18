@@ -8,7 +8,7 @@ No personal information about the operator appears on any public-facing surface.
 
 ## Standing checklist
 
-**Status as of 2026-05-18 (end of Session 0):**
+**Status as of 2026-05-19 (end of Session 1):**
 
 - [x] Domain WHOIS — Cloudflare Registrar, privacy ON. `watchsentry.app` registered 2026-05-18 with default WHOIS privacy.
 - [x] CWS developer profile display name — `WatchSentry`. Registered 2026-05-18.
@@ -42,4 +42,4 @@ Use this section to record temporary exceptions (e.g. "CWS support email is `<gh
 
 | Item | Reason | Remediation | Deadline |
 |---|---|---|---|
-| _(none yet)_ | | | |
+| Operator workspace path `C:\omerprojects\watchsentry\` appears in committed plan, progress log, and audit doc | Session 0 plan was written with literal local paths; pre-existing finding, not introduced by Session 1 | Strip `omerprojects` prefix from committed docs (mass find-replace to `<repo>\` or similar) **before** the repo is ever made public, or move operational docs (plan, progress, audit) into a separate private repo | Before any change to repo visibility / before open-sourcing the extension |
