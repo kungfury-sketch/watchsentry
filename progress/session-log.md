@@ -43,9 +43,49 @@ Append one entry per work session. Format per `feedback_working_style.md` in use
   - TIER 2 optional: `github.com/ComeOnOliver/skillshub` for chrome-extension-icons (review before install).
   - No specific skill exists for Hono, eBay Browse API, Lemon Squeezy, Vitest, Biome — use upstream docs.
 
+**Additional work executed in Session 0 (after the initial pause):**
+
+- Skills installed FULL into `~/.claude/skills/`:
+  - `chrome-extension/` (samber/cc-skills, MIT) — SKILL.md + 13 reference files
+  - `cloudflare/` (cloudflare/skills, Apache-2.0) — SKILL.md + ~280 reference files across 58 services (workers, d1, kv, wrangler, pages, cron-triggers, queues, browser-rendering, secrets-store, etc.). Self-contained; no upstream git relation.
+  - Staging folders at `C:\omerprojects\chrome extension\` and `C:\omerprojects\cloudflare\` cleaned up.
+- Task 1.7 — `wrangler login` complete. Cloudflare account `kungfurry` (`dd48515dc7c2b5e482780a4ed125c0dc`) authorized.
+- Task 1.8 — Created:
+  - D1 database `watchsentry-db` (ID `0e266a44-1c3b-4c81-8970-df24b5c42dcb`, region EEUR).
+  - KV namespace `watchsentry-cache` (ID `45d2b00e2fd545c38df468b15b8ec097`).
+  - Local `workers/wrangler.toml` written with both IDs (gitignored, verified via `git check-ignore`).
+  - Local `docs/cloudflare-bindings.md` written (gitignored).
+- Task 1.9 — Workers scaffold complete:
+  - `package.json` with Hono ^4.6, Zod ^3.23, Vitest ^2.1, Biome ^1.9.4, TypeScript ^5.5, Wrangler ^4.92, @cloudflare/workers-types.
+  - `tsconfig.json` (strict, ES2022, Bundler resolution, Workers types).
+  - `biome.json` (2-space, 100 lineWidth, recommended rules).
+  - `vitest.config.ts` (node env, v8 coverage).
+  - `src/index.ts` — minimal Hono app with `/health` endpoint + scheduled handler stub.
+  - `npm install` succeeded (148 packages).
+  - `npm run typecheck` clean.
+- Task 1.10 — Vitest first green test:
+  - `tests/health.test.ts` — 2 tests passing (health 200 + 404 fallback).
+  - `npm run lint` clean.
+- Task 2.1 — D1 schema migration `migrations/0001_init.sql` applied to remote + local. 5 tables: `watch_references`, `sold_comps`, `listings_snapshot`, `users`, `audit_log`. Indexes on (brand, reference_number), (reference_id, condition_tier, sold_at), (event_type, created_at).
+- Task 2.2 — `migrations/0002_seed_refs.sql` applied. 50 watch references seeded (Rolex, Omega, Tudor, Cartier, AP, Patek, IWC, Breitling, Grand Seiko, Panerai, Hublot, VC, Lange, JLC, Zenith). Verified via `SELECT COUNT(*) = 50`.
+
+**Commits pushed to origin/main:**
+- `fc30c18` chore: Phase 0 scaffold (foundations)
+- `b135d80` docs(progress): log session 0 milestones
+- `03d4247` feat(workers): MV3-ready Hono scaffold + first green test
+- `24c2b98` feat(db): initial D1 schema + top-50 watch references seed
+
+**Session 0 hours:** ~3 (planning + scaffold + Cloudflare setup + Week 2 start).
+
+**Session 0 end state — clean handoff:**
+- Tasks 1.1 → 2.2 all DONE.
+- USER ACTION NEEDED to unblock Task 2.3 → 2.8 chain: register an eBay Developer App, capture App ID + Cert ID, run `wrangler secret put EBAY_APP_ID` and `wrangler secret put EBAY_CERT_ID` from `workers/`.
+- After eBay creds land, Claude can autonomously execute Tasks 2.4 (eBay client + tests), 2.5 (fair-value calc + tests), 2.6 (D1 repo module), 2.7 (cron handler + first remote deploy + smoke test), 2.8 (/enrich endpoint + zod + KV cache + integration smoke). Estimated 4–6 hours of work.
+
 **Next session entry point:**
-1. User installs Tier-1 skills locally (`git clone` into plugin dir, OR raw file download).
-2. Task 1.7 — `wrangler login` (user-action: OAuth flow in browser). Once `wrangler whoami` resolves, Claude can run wrangler commands directly from local shell using the cached auth.
-3. Task 1.8 — D1 + KV creation (`wrangler d1 create watchsentry-db`, `wrangler kv namespace create CACHE`); copy IDs into local `wrangler.toml` (gitignored).
-4. Task 1.9 — Workers project scaffold (`npm init`, install deps, write src/index.ts).
-5. Task 1.10 — Vitest harness + first green test.
+1. Auto-load MEMORY.md (harness does it).
+2. Read `progress/session-log.md` (this file).
+3. Check whether user has registered the eBay app and stored secrets:
+   - `wrangler secret list` should show `EBAY_APP_ID` and `EBAY_CERT_ID`.
+4. If yes → execute Task 2.4 first (eBay client), continue through 2.8.
+5. If no → confirm registration plan with user, hand back the eBay registration instructions.
