@@ -10,57 +10,77 @@ jobs:
   workers:
     name: Workers (typecheck + lint + test)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: workers
     steps:
       - uses: actions/checkout@v4
+      - name: Check if workers/ is initialized
+        id: check
+        run: |
+          if [ -f workers/package.json ]; then
+            echo "initialized=true" >> $GITHUB_OUTPUT
+          else
+            echo "initialized=false" >> $GITHUB_OUTPUT
+            echo "::notice::workers/ not yet initialized — skipping CI for this job."
+          fi
       - uses: actions/setup-node@v4
+        if: steps.check.outputs.initialized == 'true'
         with:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: workers/package-lock.json
-      - name: Skip if workers/ not initialized
-        id: check
-        run: |
-          if [ ! -f package.json ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-          fi
-      - run: npm ci
-        if: steps.check.outputs.skip != 'true'
-      - run: npm run typecheck
-        if: steps.check.outputs.skip != 'true'
-      - run: npm run lint
-        if: steps.check.outputs.skip != 'true'
-      - run: npm test
-        if: steps.check.outputs.skip != 'true'
+      - name: npm ci
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: workers
+        run: npm ci
+      - name: typecheck
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: workers
+        run: npm run typecheck
+      - name: lint
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: workers
+        run: npm run lint
+      - name: test
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: workers
+        run: npm test
 
   extension:
     name: Extension (typecheck + lint + test + build)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: extension
     steps:
       - uses: actions/checkout@v4
+      - name: Check if extension/ is initialized
+        id: check
+        run: |
+          if [ -f extension/package.json ]; then
+            echo "initialized=true" >> $GITHUB_OUTPUT
+          else
+            echo "initialized=false" >> $GITHUB_OUTPUT
+            echo "::notice::extension/ not yet initialized — skipping CI for this job."
+          fi
       - uses: actions/setup-node@v4
+        if: steps.check.outputs.initialized == 'true'
         with:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: extension/package-lock.json
-      - name: Skip if extension/ not initialized
-        id: check
-        run: |
-          if [ ! -f package.json ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-          fi
-      - run: npm ci
-        if: steps.check.outputs.skip != 'true'
-      - run: npm run typecheck
-        if: steps.check.outputs.skip != 'true'
-      - run: npm run lint
-        if: steps.check.outputs.skip != 'true'
-      - run: npm test
-        if: steps.check.outputs.skip != 'true'
-      - run: npm run build
-        if: steps.check.outputs.skip != 'true'
+      - name: npm ci
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: extension
+        run: npm ci
+      - name: typecheck
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: extension
+        run: npm run typecheck
+      - name: lint
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: extension
+        run: npm run lint
+      - name: test
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: extension
+        run: npm test
+      - name: build
+        if: steps.check.outputs.initialized == 'true'
+        working-directory: extension
+        run: npm run build
