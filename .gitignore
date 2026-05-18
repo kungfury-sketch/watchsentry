@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Environment + credentials — NEVER commit
+.env
+.env.*
+*.local
+.dev.vars
+.wrangler/
+wrangler.toml
+
+# Cloudflare bindings (D1 + KV IDs treated strictly per user rule)
+docs/cloudflare-bindings.md
+
+# CWS submission binaries — too large / churn
+cws/*.mp4
+cws/*.mov
+cws/*.zip
+cws/dist-*.zip
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Misc local artifacts
+*.bak
+*.tmp
+*.cache

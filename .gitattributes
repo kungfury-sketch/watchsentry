@@ -1,0 +1,29 @@
+# Force LF line endings on all text files (avoid CRLF issues on Windows)
+* text=auto eol=lf
+
+# Mark binaries explicitly
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.svg text
+*.mp4 binary
+*.mov binary
+*.zip binary
+*.pdf binary
+
+# Source code: text
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.md text
+*.html text
+*.css text
+*.sql text
+*.toml text
+*.yml text
+*.yaml text

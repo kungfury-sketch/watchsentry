@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  workers:
+    name: Workers (typecheck + lint + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: workers/package-lock.json
+      - name: Skip if workers/ not initialized
+        id: check
+        run: |
+          if [ ! -f package.json ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          fi
+      - run: npm ci
+        if: steps.check.outputs.skip != 'true'
+      - run: npm run typecheck
+        if: steps.check.outputs.skip != 'true'
+      - run: npm run lint
+        if: steps.check.outputs.skip != 'true'
+      - run: npm test
+        if: steps.check.outputs.skip != 'true'
+
+  extension:
+    name: Extension (typecheck + lint + test + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: extension/package-lock.json
+      - name: Skip if extension/ not initialized
+        id: check
+        run: |
+          if [ ! -f package.json ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          fi
+      - run: npm ci
+        if: steps.check.outputs.skip != 'true'
+      - run: npm run typecheck
+        if: steps.check.outputs.skip != 'true'
+      - run: npm run lint
+        if: steps.check.outputs.skip != 'true'
+      - run: npm test
+        if: steps.check.outputs.skip != 'true'
+      - run: npm run build
+        if: steps.check.outputs.skip != 'true'

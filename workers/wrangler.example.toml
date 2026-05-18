@@ -1,0 +1,34 @@
+# Copy this file to `wrangler.toml` and replace the <PLACEHOLDERS> with your real
+# Cloudflare resource IDs. The real `wrangler.toml` is gitignored — never commit it.
+#
+# Resource IDs (D1 database_id, KV namespace id) are not authentication credentials
+# on their own. They are treated strictly per the user's no-credentials-in-git rule.
+#
+# Secrets (EBAY_APP_ID, EBAY_CERT_ID, etc.) are NEVER stored in this file —
+# use `wrangler secret put NAME` to set them in Cloudflare directly.
+
+name = "watchsentry-api"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+
+# Created via: `wrangler d1 create watchsentry-db`
+[[d1_databases]]
+binding = "DB"
+database_name = "watchsentry-db"
+database_id = "<PASTE_D1_DATABASE_ID_HERE>"
+
+# Created via: `wrangler kv namespace create CACHE`
+[[kv_namespaces]]
+binding = "CACHE"
+id = "<PASTE_KV_NAMESPACE_ID_HERE>"
+
+# Daily eBay sold-comp refresh at 04:00 UTC
+[triggers]
+crons = ["0 4 * * *"]
+
+[observability]
+enabled = true
+
+# Secrets to set via `wrangler secret put`:
+#   EBAY_APP_ID   — eBay Developer Program Client ID
+#   EBAY_CERT_ID  — eBay Developer Program Client Secret
