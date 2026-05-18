@@ -260,6 +260,18 @@ This section supersedes any earlier "Next session entry point" content above.
 
 ---
 
+## Post-session-1 update (2026-05-19, end of day)
+
+User confirmed at end of Session 1: **eBay Developer App STILL not activated.** Wrangler check (`wrangler secret list` from `workers/`) returns "Worker 'watchsentry-api' not found" → secrets never put → activation never landed → Tasks 2.4, 2.7, 2.8 still gated.
+
+Elapsed time since registration submission (Session 0, 2026-05-18 evening): **>24 hours**, exceeding vendor's stated ETA.
+
+Action recorded: **state preserved as-is; no nudge of eBay support attempted from Claude side.** User to decide if/when to escalate. New feedback memory `feedback_parallel_around_blockers.md` captures the pattern; portfolio-level Session 4 log `C:\omerprojects\passive-income-empire\sessions\2026-05-19-session-4-phase0-nonlinear.md` documents the non-linear progress map for cross-session continuity.
+
+If eBay is still blocked at start of Session 2, default action per Section 9 of the portfolio Session 4 log is autonomous execution of Tasks 4.1 / 4.3 / 4.4-client / 5.1-source / 5.3-copy / privacy+terms drafts.
+
+---
+
 ## Session 2 entry-point checklist (READ THIS FIRST NEXT SESSION)
 
 1. Auto-load `MEMORY.md` (harness does).
