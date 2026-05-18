@@ -1,0 +1,29 @@
+{
+  "name": "@watchsentry/workers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "description": "WatchSentry Cloudflare Workers backend — fair-value enrichment API + daily eBay sold-comp cron",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check src tests",
+    "fmt": "biome format --write src tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@cloudflare/workers-types": "^4.20240925.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^4.92.0"
+  }
+}
