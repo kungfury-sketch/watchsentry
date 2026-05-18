@@ -1,0 +1,35 @@
+{
+  "name": "@watchsentry/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "description": "WatchSentry Chrome extension — fair-value overlay for Chrono24",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check src tests",
+    "fmt": "biome format --write src tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "preact": "^10.22.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@crxjs/vite-plugin": "^2.0.0-beta.27",
+    "@preact/preset-vite": "^2.9.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/preact": "^3.2.4",
+    "@types/chrome": "^0.0.270",
+    "@types/node": "^25.9.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "jsdom": "^25.0.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}
