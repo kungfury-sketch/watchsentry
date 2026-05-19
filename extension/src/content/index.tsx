@@ -3,12 +3,8 @@ import { enrichListing } from "../api/client";
 import { Badge } from "../components/Badge";
 import { parseChrono24Listing } from "../parsers/chrono24-listing";
 
-// TODO(phase-1): Replace once the watchsentry-api worker is deployed (Task 2.7).
-// The actual subdomain is the kungfurry account's workers.dev subdomain — known
-// at deploy time, not at scaffold time. Until then, network calls will fail
-// (DNS) and the badge will fall through to the "no_data" branch — which is the
-// correct UX for "unknown reference" prior to launch.
-const API_BASE = "https://watchsentry-api.<your-subdomain>.workers.dev";
+// Cut over to api.watchsentry.app once the custom Worker route is wired (Week 5).
+const API_BASE = "https://watchsentry-api.txrz.workers.dev";
 
 function injectMountPoint(): HTMLElement {
   // Mount above the price block on Chrono24 listing pages.
