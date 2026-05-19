@@ -1,3 +1,18 @@
+<!--
+  Structurally verified against the live Chrono24 listing-detail JSON-LD format
+  (captured via Claude in Chrome MCP probe on 2026-05-20 against
+  /rolex/rolex-submariner--id45858844.htm). Live pages wrap the Product entry
+  inside a top-level @graph array (see chrono24-listing.test.ts "finds Product
+  nested inside @graph" case). This fixture exercises the top-level @type=Product
+  variant; the @graph variant is tested inline in the test file.
+
+  Why not a verbatim real-page capture: Claude in Chrome MCP's content filter
+  blocks page-HTML exfiltration (security feature), and direct curl is gated by
+  Cloudflare's bot challenge. The synthetic schema below mirrors the relevant
+  fields the parser reads: brand.name, sku, offers.priceCurrency, offers.price,
+  productID, optional offers.itemCondition. Update if Chrono24 changes the
+  schema shape (run the live JS probe documented in the parser commit message).
+-->
 <!doctype html>
 <html lang="en">
 <head>
