@@ -8,22 +8,24 @@ No personal information about the operator appears on any public-facing surface.
 
 ## Standing checklist
 
-**Status as of 2026-05-19 (end of Session 1):**
+**Status as of 2026-05-19 (end of Session 2 — Week 5 landing source written, no deploys):**
 
 - [x] Domain WHOIS — Cloudflare Registrar, privacy ON. `watchsentry.app` registered 2026-05-18 with default WHOIS privacy.
 - [x] CWS developer profile display name — `WatchSentry`. Registered 2026-05-18.
 - [x] CWS support email — `support@watchsentry.app` (verified via Cloudflare Email Routing → forwards to private gmail inbox).
 - [x] GitHub repo visibility — PRIVATE. Confirmed at https://github.com/kungfury-sketch/watchsentry.
-- [x] Git author email — `264698993+kungfury-sketch@users.noreply.github.com`. Verified via `git log --pretty=fuller` across all commits.
+- [x] Git author email — `264698993+kungfury-sketch@users.noreply.github.com`. Verified via `git log --pretty=fuller` across all commits including all of Session 2's 8 commits.
 - [x] Git author name — `WatchSentry Bot`. Verified across all commits.
 - [x] GitHub `kungfury-sketch` profile — brand-only. User-confirmed: no real name in profile name, no gravatar, no personal bio, no public email.
-- [ ] Landing page footer — brand only, no operator name. **NOT APPLICABLE YET** (landing/ folder not created until Week 5, Task 5.1).
-- [ ] Privacy policy contact — brand email only. **NOT APPLICABLE YET** (Week 5, Task 5.1).
-- [ ] Terms of service signing party — brand entity name, no real name. **NOT APPLICABLE YET** (Week 5).
-- [x] Any tracking/analytics — internal only, never publicly exposed dashboards. Pattern locked: Cloudflare Web Analytics (free, privacy-respecting) when landing site goes live; no third-party analytics SDKs.
-- [x] Cloudflare account profile — fine as-is (internal). Login email visible only via `wrangler whoami`; account-level resources require authentication to view.
+- [x] Landing page footer — brand only. Reviewed 2026-05-19: `landing/index.html` shows brand name, support email, privacy/terms links. NO operator name anywhere.
+- [x] Privacy policy contact — `support@watchsentry.app` only. Reviewed 2026-05-19: `landing/privacy.html` has zero personal info; uses "we" / brand language only.
+- [x] Terms of service signing party — `landing/terms.html` uses "we" + brand language only, no real name. NO operator identity revealed.
+- [x] Any tracking/analytics — internal only. Pattern locked: Cloudflare Web Analytics (free, privacy-respecting) when landing site goes live; no third-party analytics SDKs.
+- [x] Cloudflare account profile — internal-only. Login email visible only via `wrangler whoami`; account-level resources require authentication to view.
+- [x] Cloudflare Worker deployment author metadata — internal dashboard metadata only (`cil.omerr@gmail.com` appears in `wrangler deployments list` but is NOT exposed on any public surface). Flagged as awareness item, NOT a violation.
 - [ ] Lemon Squeezy (Phase 1) — brand product page; real KYC kept internal. **NOT APPLICABLE YET** (Phase 1, post-Phase-0-launch).
-- [x] eBay Developer App — `WatchSentry` as app name, `support@watchsentry.app` as compliance contact. Registered 2026-05-18, awaiting eBay activation (~24h).
+- [x] eBay Developer App — `WatchSentry` as app name, `support@watchsentry.app` as compliance contact. Registered 2026-05-18, **ACTIVATED 2026-05-19**.
+- [x] No PII grep on landing source — ran 2026-05-19 against `landing/`: zero matches for `omer/cil/hotmail/gmail/claude/anthropic` outside the legitimate `support@watchsentry.app` brand email.
 
 ## Re-run triggers
 
@@ -35,6 +37,7 @@ Re-run the full checklist whenever any of the following happens:
 - A new scrape source is added that posts to a forum / Reddit / etc. under a brand account
 - Phase 1 begins (Lemon Squeezy KYC, paid-tier marketing copy, affiliate program)
 - Any pre-existing audit row needs to change (e.g. moving away from `kungfury-sketch` GH alias to another)
+- Any `wrangler deploy` or `wrangler pages deploy` happens — re-verify nothing leaked into bundled output
 
 ## Audit-debt log
 
@@ -42,4 +45,10 @@ Use this section to record temporary exceptions (e.g. "CWS support email is `<gh
 
 | Item | Reason | Remediation | Deadline |
 |---|---|---|---|
-| Operator workspace path `C:\omerprojects\watchsentry\` appears in committed plan, progress log, and audit doc | Session 0 plan was written with literal local paths; pre-existing finding, not introduced by Session 1 | Strip `omerprojects` prefix from committed docs (mass find-replace to `<repo>\` or similar) **before** the repo is ever made public, or move operational docs (plan, progress, audit) into a separate private repo | Before any change to repo visibility / before open-sourcing the extension |
+| Operator workspace path `C:\omerprojects\watchsentry\` appears in committed plan, progress log, and audit doc | Session 0 plan was written with literal local paths; pre-existing finding | Strip `omerprojects` prefix from committed docs (mass find-replace to `<repo>\` or similar) **before** any change to repo visibility, OR move operational docs (plan, progress, audit) into a separate private repo | Before any change to repo visibility / before open-sourcing the extension |
+| Placeholder extension icons (1×1 transparent PNGs) in `extension/icons/` | Session 4 manifest needed icons to build; brand-design phase deferred | Replace with branded 16/48/128 PNGs before CWS submission | Week 6 / Task 6.2 |
+| Synthetic Chrono24 listing fixture in `extension/tests/fixtures/` | Session 4 lacked a user-captured real-page; parser tests use schema.org-compliant synthetic HTML | Re-capture real Chrono24 listing + search pages, re-verify parsers | Before Phase 1 paid tier ships |
+| `workers_dev = true` + `preview_urls = true` are implicit Wrangler defaults | Session 2 first remote deploy left these at defaults | Make explicit in `wrangler.toml`; consider setting `preview_urls = false` to reduce attack surface | Before `https://watchsentry-api.txrz.workers.dev` URL is linked from any public surface (landing CTA, CWS listing, README) |
+| `*.workers.dev` subdomain `txrz` is account-level (auto-generated, opaque) | All workers on the user's Cloudflare account share the `txrz` subdomain — does NOT visibly tie WatchSentry to other projects but enumeration of `*.txrz.workers.dev` would | Cut over to `api.watchsentry.app` custom Worker route; disable `workers_dev = true` once the custom route is the only entry point | Before CWS publish (Week 5/6) |
+| CTA link on `landing/index.html` is a placeholder ("Coming soon to Chrome Web Store") | Real chromewebstore.google.com/detail/<id> URL only exists after CWS approval | Replace placeholder with the real CWS detail URL after CWS submission lands | Week 6 / immediately post-CWS-approval |
+| Cloudflare Worker deployment metadata shows `cil.omerr@gmail.com` as Author | Internal dashboard data only; not exposed on any public surface. Tied to the Cloudflare account holder; cannot be hidden without account-level changes | None required (acceptable). Avoid screenshotting `wrangler deployments list` or the CF dashboard publicly | n/a — awareness only |
