@@ -385,35 +385,160 @@ Unchanged from Session 1 + the four new data-quality items + two new audit-debt 
 
 ---
 
-## Session 4 entry-point checklist (READ THIS FIRST NEXT SESSION)
+## Session 4 — Audit + testing-prep fixes + condition fallback deploy (2026-05-19, ~1.5 hrs)
+
+**Hours:** ~1.5 (deep audit + manifest fix + fallback impl + ~30 min debug detour on KV `--remote` gotcha)
+**Mode:** verification-before-completion + TDD + executing-plans
+
+### Context entering session
+- Session 3 closed Phase 0 at 28/30, cap deployed live (version `67ea3af6`).
+- User asked: "check everything you did so far very detailly", "what should we do next", "do I need to create anything regarding chrome extension developer page", "when can I test the product".
+- Triggered full audit pass, then made the extension testable end-to-end with real medians (via condition fallback) before user loaded it locally.
+
+### Audit findings (live commands, not just claims)
+
+**Green:**
+- Workers: typecheck + lint + 25/25 tests (later 29/29 after fallback tests).
+- Extension: typecheck + lint + build + 16/16 tests.
+- Live `/health` 200 ✓, `/enrich` ok-path ✓, invalid → 400 ✓, `/debug/cron` → 404 ✓.
+- D1: 6,626 sold_comps + 1 users row (smoke); audit_log has manual cron seed entry.
+- Worker version `67ea3af6` (cap deploy, pre-fallback) at audit start.
+- Wrangler.toml cron declaration present.
+- Git working tree clean; all 15+ commits authored as WatchSentry Bot ✓.
+- PII grep on landing/ + extension/src — clean (only legitimate brand email).
+
+**Issues found:**
+1. **Manifest content-script scope was `https://www.chrono24.com/*`** — too narrow for Chrono24 localized subdomains.
+2. **Real-world testing would mostly show `no_data`** because Chrono24 schema.org condition maps to `very_good` but D1 has only `fair` tier data.
+3. **First scheduled cron had NOT fired** — expected; next firing 2026-05-20 04:00 UTC. Audit-log only has the manual seed.
+4. **Placeholder icons (1×1, 70 bytes)** — already in audit-debt; replace before CWS submission.
+5. **Landing CTA is placeholder text** — already in audit-debt.
+6. **CF deployment metadata shows `cil.omerr@gmail.com`** — internal dashboard only; logged as awareness item.
+
+### Fixes shipped this session
+
+**1. Manifest scope widened.** `extension/manifest.config.ts` content_scripts.matches → `https://*.chrono24.com/*`. Extension rebuilt. Commit `cddf078`. No deploy needed (extension is not yet published).
+
+**2. Server-side condition fallback.** New `getCompsWithFallback()` in `workers/src/enrich.ts`: if requested tier returns 0 comps AND requested tier ≠ `fair`, query `fair` as fallback. Response gains `tier` (the tier actually used) + `tierFallback` (boolean) fields. 4 new unit tests. Commit `cef953c`. Deployed.
+
+### Deploys this session (4 total — debug iteration noise)
+| Version | Notes |
+|---|---|
+| `d6a87a77` | First fallback deploy — appeared broken (stale KV cache shadowed result) |
+| `c6256146` | Re-deploy after cache investigation — still appeared broken |
+| `172141a0` / `a184b195` | Two intermediate deploys with `/debug/trace` endpoint to diagnose |
+| `a31ba033` | **CURRENT LIVE** — clean prod version, debug endpoint removed, console.log removed |
+
+### The KV `--remote` gotcha (root cause of 30-min detour)
+
+Spent ~30 min thinking the fallback was broken. `/enrich` kept returning stale `no_data` even after I'd "deleted" the cache entries.
+
+**Root cause:** `wrangler kv key list/delete` defaults to **local** dev KV, not the remote production namespace — exactly the same surprise as `wrangler d1 execute` requiring `--remote`. The wrangler hint "Use --remote..." was buried in output, missed initially.
+
+**Resolution:** added `--remote` to the delete commands → stale `enrich:Rolex:124060:very_good` and `enrich:Rolex:124060:fair` keys cleared → next /enrich call returned the correct ok response with `tier:fair, tierFallback:true`.
+
+**New reference memory:** `reference_wrangler_remote_flag.md` — captures this for future sessions.
+
+### Live verification — fallback works end-to-end
+
+Final POST to `/enrich` with `condition: "very_good"`:
+```json
+{
+  "status": "ok",
+  "fairValue": { "medianUsd": 13499, "sampleSize": 200, "windowDays": 90 },
+  "reference": { "brand": "Rolex", "model": "Submariner", "displayName": "Rolex Submariner No-Date 124060" },
+  "tier": "fair",
+  "tierFallback": true,
+  "delta": { "absoluteUsd": -3999, "percent": -29.6 }
+}
+```
+
+Pipeline: request `very_good` → D1 has 0 rows → fallback to `fair` → 200 rows → median $13,499 → delta vs $9,500 listing = -$3,999 (-29.6%). Badge will render with red/green/neutral tone based on delta thresholds in Badge.tsx (≤−5% good, ≥+10% bad, else neutral).
+
+### Tests
+- Workers: 25 → **29/29** (added 4 condition-fallback tests).
+- Extension: **16/16** unchanged (manifest scope fix doesn't affect tests).
+
+### Commits this session (2 functional + 0 debug — debug landed without diff)
+| SHA | Subject |
+|---|---|
+| `cddf078` | fix(ext): widen content-script matches to *.chrono24.com (was www only) |
+| `cef953c` | feat(workers): /enrich fallback to 'fair' tier when requested tier empty |
+| (no commit) | `/debug/trace` endpoint + `console.log` added in-session, removed before push; net working-tree diff = 0 |
+
+### Outstanding at session close: USER ABOUT TO TEST LOCALLY
+User has the test instructions; was about to install the unpacked extension from `extension/dist/` in Chrome and visit real Chrono24 listings. **NO TESTING FEEDBACK YET CAPTURED.** Next session must follow up.
+
+### Phase 0 progress unchanged: 28/30
+- This session was refinement (fix + improvement to existing impl), not new plan-listed tasks.
+- Manifest scope fix is best understood as a bug-fix against the original Task 3.1 scaffold.
+- Condition fallback is a Phase 0 polish on top of Task 2.8.
+
+---
+
+## Session 5 entry-point checklist (READ THIS FIRST NEXT SESSION)
 
 1. Auto-load `MEMORY.md` (harness does).
-2. Read "Session 3" section above (this file).
-3. Health-check live deploy: `curl https://watchsentry-api.txrz.workers.dev/health` → expect `{"ok":true,...}`.
-4. Confirm cron ran overnight (now Session 3 was 2026-05-19; check tomorrow's 04:00 UTC firing):
+2. Read the "Session 4" section above (this file).
+3. **FIRST QUESTION to the user:** *"How did the local testing go?"* — capture:
+   - Did the extension load in Chrome without errors?
+   - Did the popup show + the toggle work?
+   - Did badges render on actual Chrono24 listings?
+   - Any errors in the page console or extension service-worker console?
+   - Sample fair-value numbers + deltas observed (sanity-check data quality)
+   - Did the search-results compact badges appear too?
+4. Health-check live: `curl https://watchsentry-api.txrz.workers.dev/health` → expect `{"ok":true,"name":"watchsentry-api"}`.
+5. Confirm overnight cron fired:
    ```powershell
    cd C:\omerprojects\watchsentry\workers
-   npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT created_at FROM audit_log WHERE event_type='cron_ebay_refresh_done' ORDER BY id DESC LIMIT 2;"
+   npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT event_type, payload_json, created_at FROM audit_log WHERE event_type LIKE 'cron%' ORDER BY id DESC LIMIT 5;"
    ```
-   Expect 2 rows including one from today.
-5. Verify the daily cap reset overnight (counter_day should bump to today's date once any user touches /enrich tomorrow):
+   Expect ≥2 rows: manual seed (10:50 UTC 2026-05-19) + scheduled run (04:00 UTC 2026-05-20). If only 1 → cron didn't fire, investigate.
+6. Check user's real anon-ID landed in D1 `users`:
    ```powershell
-   npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT anonymous_id, enrichment_count_today, counter_day FROM users LIMIT 5;"
+   npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT COUNT(*) AS n, MAX(counter_day) AS latest FROM users;"
    ```
-6. **Default forward plan:**
-   - **Task 5.3 listing copy** — draft `cws/listing.md` (description, short summary, category, keywords). Autonomous-safe (markdown only).
-   - **Task 5.2** — defer unless user wants subscribe form back. Requires deploy + D1 migration. Ask first.
-   - **CWS screenshots + demo video** — needs you (Chrome capture or OBS recording on a real Chrono24 page). Cannot do autonomously.
-   - **Phase 1 data-quality cleanups** (condition mapping, price-range filter) — optional pre-launch polish if you want to ship more accurate medians.
-   - **Custom domain cutover** (`api.watchsentry.app`) — Worker route + DNS via Cloudflare dashboard. Needs you to confirm pre-deploy + a `wrangler deploy` afterward.
-7. **DO NOT** attempt autonomously without asking first (per `feedback_no_cost_without_asking.md`):
-   - `wrangler deploy` (any subsequent)
-   - `wrangler pages deploy`
-   - CWS submission
-   - Any new account / paid feature / subscription
+   Should show count ≥ 2 (smoke UUIDs + user's real anon-ID) if user actually loaded the extension on a Chrono24 listing.
+7. Check what got cached during user testing:
+   ```powershell
+   npx wrangler kv key list --namespace-id=45d2b00e2fd545c38df468b15b8ec097 --remote
+   ```
+   Each `enrich:Brand:Ref:Condition` entry is one (brand, ref, condition) tuple the user hit.
+8. **If testing went well:** propose moving to Task 5.3 listing copy draft (autonomous markdown — no deploy needed).
+9. **If testing revealed bugs:** triage them first. Likely candidates: parser doesn't match real Chrono24 DOM (selectors out of date), mount-point selector misses, or extension permissions issue (host_permissions wildcard pattern).
+10. **DO NOT** attempt autonomously without asking first (per `feedback_no_cost_without_asking.md`):
+    - Any `wrangler deploy` / `wrangler pages deploy`
+    - CWS submission
+    - New accounts / paid features / subscriptions
+    - Custom domain wiring (api.watchsentry.app)
+
+### Useful one-liners (always remember `--remote`!)
+
+```powershell
+# CRITICAL: wrangler kv + d1 default to LOCAL dev resources. Always pass --remote for production.
+# See reference_wrangler_remote_flag.md in memory.
+
+# Production KV cache state:
+npx wrangler kv key list --namespace-id=45d2b00e2fd545c38df468b15b8ec097 --remote
+
+# Production D1 — recent enrichment + cron activity:
+npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT event_type, payload_json, created_at FROM audit_log ORDER BY id DESC LIMIT 10;"
+
+# Production D1 — users + cap state:
+npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT anonymous_id, enrichment_count_today, counter_day, last_seen_at FROM users ORDER BY last_seen_at DESC LIMIT 10;"
+
+# Production D1 — sold_comps rowcount:
+npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT COUNT(*) AS n FROM sold_comps;"
+
+# Live /enrich smoke (with anonymousId increments cap counter):
+curl -X POST https://watchsentry-api.txrz.workers.dev/enrich -H "Content-Type: application/json" -d '{"brand":"Rolex","reference":"124060","condition":"very_good","listedPriceUsd":9500,"anonymousId":"<fresh-uuid>"}'
+
+# Force-purge a stale cache entry:
+npx wrangler kv key delete --namespace-id=45d2b00e2fd545c38df468b15b8ec097 --remote "enrich:Brand:Ref:Condition"
+```
 
 ### Phase 1 cleanup backlog (unchanged + 1 added)
-- Condition mapping from title/subtitle text
+- Condition mapping from title/subtitle text (eBay API doesn't return condition for watches)
 - Price-range filter on eBay search results
 - Marketplace Insights API (restricted) for real sold-comps
 - Rename cron counter to `attempted` + log `distinct` separately
@@ -423,6 +548,7 @@ Unchanged from Session 1 + the four new data-quality items + two new audit-debt 
 - Make `workers_dev` + `preview_urls` explicit in wrangler.toml; cut over to `api.watchsentry.app` custom route
 - `omerprojects` path leak in committed docs (before repo visibility change)
 - Add Task 5.2 mailing-list handler if paid-tier launch needs lead capture
+- (NEW Session 4) Consider bidirectional condition fallback — if user requests `fair` and we have only `very_good` data (post-Phase-1 mining), should we fall back upward? Punt to Phase 1 design.
 
 ### Verification commands cheat-sheet
 
