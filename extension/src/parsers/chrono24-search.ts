@@ -5,7 +5,10 @@ export type Chrono24SearchCard = {
   listedPriceUsd: number | null;
 };
 
-const CARD_SELECTOR = ".wt-listing-item.js-listing-item.listing-item, .wt-listing-item";
+// Strict 3-class selector only. Chrono24's responsive layout has additional .wt-listing-item
+// wrapper elements (~2x match count) that don't represent real listings — including them
+// causes duplicate badges per card.
+const CARD_SELECTOR = ".wt-listing-item.js-listing-item.listing-item";
 
 const COMPOUND_BRANDS = [
   "Patek Philippe",
@@ -51,9 +54,21 @@ function extractBrand(el: HTMLElement): string | null {
 
 function extractReference(el: HTMLElement): string | null {
   const refText = findReferenceText(el);
+
+  // Cleanest case: the ref-line text IS the reference (e.g. "124060" or "126610LN").
   if (refText && /^[0-9][A-Za-z0-9\-./]*$/.test(refText)) return refText;
-  const m = (el.textContent ?? "").match(/\bRef\.?\s+([0-9][A-Za-z0-9\-./]*)/i);
-  return m?.[1] ?? null;
+
+  const fullText = el.textContent ?? "";
+
+  // Fallback 1: explicit "Ref. NNN" pattern anywhere in the card.
+  const explicit = fullText.match(/\bRef\.?\s+([0-9][A-Za-z0-9\-./]*)/i);
+  if (explicit?.[1]) return explicit[1];
+
+  // Fallback 2: implicit reference in descriptive seller text — 5-7 digits with optional
+  // 1-4 letter suffix. Excludes 4-digit years (e.g. "2026") and short numbers (e.g. "41mm").
+  // Examples we catch: "Unworn 2026 / 124060 - New style box", "Black Dial 124060", "41mm 124060 Oystersteel".
+  const implicit = fullText.match(/\b([0-9]{5,7}[A-Za-z]{0,4})\b/);
+  return implicit?.[1] ?? null;
 }
 
 function extractPrice(el: HTMLElement): number | null {
