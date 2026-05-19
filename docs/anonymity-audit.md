@@ -8,21 +8,25 @@ No personal information about the operator appears on any public-facing surface.
 
 ## Standing checklist
 
-**Status as of 2026-05-19 (end of Session 2 — Week 5 landing source written, no deploys):**
+**Status as of 2026-05-20 (post-Session-5 re-audit — pre-CWS-submission checkpoint):**
 
 - [x] Domain WHOIS — Cloudflare Registrar, privacy ON. `watchsentry.app` registered 2026-05-18 with default WHOIS privacy.
 - [x] CWS developer profile display name — `WatchSentry`. Registered 2026-05-18.
 - [x] CWS support email — `support@watchsentry.app` (verified via Cloudflare Email Routing → forwards to private gmail inbox).
 - [x] GitHub repo visibility — PRIVATE. Confirmed at https://github.com/kungfury-sketch/watchsentry.
-- [x] Git author email — `264698993+kungfury-sketch@users.noreply.github.com`. Verified via `git log --pretty=fuller` across all commits including all of Session 2's 8 commits.
-- [x] Git author name — `WatchSentry Bot`. Verified across all commits.
+- [x] Git author email — `264698993+kungfury-sketch@users.noreply.github.com`. Verified 2026-05-20 across all commits since last audit (real-DOM fix + CORS + parser robustness + UI polish + worker cap tuning + CWS docs + session-log closeout). Zero personal-domain emails in author/committer fields anywhere.
+- [x] Git author name — `WatchSentry Bot`. Verified 2026-05-20 across all commits.
 - [x] GitHub `kungfury-sketch` profile — brand-only. User-confirmed: no real name in profile name, no gravatar, no personal bio, no public email.
 - [x] Landing page footer — brand only. Reviewed 2026-05-19: `landing/index.html` shows brand name, support email, privacy/terms links. NO operator name anywhere.
 - [x] Privacy policy contact — `support@watchsentry.app` only. Reviewed 2026-05-19: `landing/privacy.html` has zero personal info; uses "we" / brand language only.
 - [x] Terms of service signing party — `landing/terms.html` uses "we" + brand language only, no real name. NO operator identity revealed.
+- [x] CWS listing copy — `cws/listing-copy.md` reviewed 2026-05-20. All copy refers to "WatchSentry" only; no operator name. Support contact uses brand email or GitHub noreply as documented audit debt.
+- [x] CWS screenshot plan — `cws/screenshot-plan.md` explicitly directs the human capturing screenshots to use a clean Chrome profile (no bookmarks, no autocomplete, no avatar). PII-leak risk gated by capture-time discipline.
+- [x] CWS demo video shot list — `cws/demo-shotlist.md` directs the recorder to use Unlisted YouTube + anonymous channel name.
 - [x] Any tracking/analytics — internal only. Pattern locked: Cloudflare Web Analytics (free, privacy-respecting) when landing site goes live; no third-party analytics SDKs.
 - [x] Cloudflare account profile — internal-only. Login email visible only via `wrangler whoami`; account-level resources require authentication to view.
-- [x] Cloudflare Worker deployment author metadata — internal dashboard metadata only (`cil.omerr@gmail.com` appears in `wrangler deployments list` but is NOT exposed on any public surface). Flagged as awareness item, NOT a violation.
+- [x] Cloudflare Worker deployment author metadata — internal dashboard metadata only (`cil.omerr@gmail.com` appears in `wrangler deployments list` but is NOT exposed on any public surface). Flagged as awareness item, NOT a violation. Re-confirmed 2026-05-20: two new deploys this session (afc8d1c6 with CORS, 31280a03 with cap tuning), neither changed public-facing surfaces.
+- [x] No PII grep across all tracked files (excluding the documented audit-debt files) — ran 2026-05-20: `git ls-files | grep -v -E '(docs/anonymity-audit|docs/plans/2026-05-18|progress/session-log)' | xargs grep -l -i -E 'omer|cil|hotmail|@gmail|claude|anthropic|kungfury|264698993'` returned ZERO matches. Clean.
 - [ ] Lemon Squeezy (Phase 1) — brand product page; real KYC kept internal. **NOT APPLICABLE YET** (Phase 1, post-Phase-0-launch).
 - [x] eBay Developer App — `WatchSentry` as app name, `support@watchsentry.app` as compliance contact. Registered 2026-05-18, **ACTIVATED 2026-05-19**.
 - [x] No PII grep on landing source — ran 2026-05-19 against `landing/`: zero matches for `omer/cil/hotmail/gmail/claude/anthropic` outside the legitimate `support@watchsentry.app` brand email.
