@@ -12,7 +12,7 @@ export default defineManifest({
   background: { service_worker: "src/background/index.ts", type: "module" },
   content_scripts: [
     {
-      matches: ["https://www.chrono24.com/*"],
+      matches: ["https://*.chrono24.com/*"],
       js: ["src/content/index.tsx"],
       run_at: "document_idle",
     },
