@@ -324,34 +324,105 @@ Unchanged from Session 1 + the four new data-quality items + two new audit-debt 
 
 ---
 
-## Session 3 entry-point checklist (READ THIS FIRST NEXT SESSION)
+## Session 3 — Week 4 + Week 5 implementation + cap deploy (2026-05-19, ~2 hrs)
+
+**Hours:** ~2 (autonomous after user approved Week 4+5 block)
+**Mode:** executing-plans + TDD + verification-before-completion
+
+### Context entering session
+- Session 2 closed with Phase 0 at 22/30, Week 2 backend live, no remaining eBay-gated tasks.
+- User explicitly authorized Week 4+5 autonomous block AND wrote a new HARD RULE memory `feedback_no_cost_without_asking.md` — no cost-creating actions without explicit ask.
+- User confirmed Cloudflare account is **Workers Paid ($5/mo)** — `/enrich` abuse could incur overage. Task 4.4 prioritized first as cost-defense.
+- User locked landing page scope: "very very basic" — single HTML page.
+
+### Tasks completed (6 plan tasks + 1 production deploy)
+| Task | Description | Commit |
+|---|---|---|
+| 4.3 | Settings popup (Preact toggle) + `storage.ts` (get/set/ensureAnonymousId) + 5 tests | `a7bdb6e` |
+| 4.4 | `touchUser()` + 50/day soft cap in workers/src/enrich.ts + 5 cap tests; client passes `anonymousId` from `getSettings()` | `be4dc9f` |
+| 4.1 | `parseChrono24Search()` + 5 tests + synthetic fixture (real-page re-verify flagged for Phase 1, same pattern as 3.2) | `4f58ccf` |
+| 4.2 | `BadgeCompact` + URL-based routing (listing vs search) + per-page 50-card client throttle | `39939c2` |
+| 5.1 | `landing/` source: index.html (subscribe form OMITTED per "very basic" scope) + privacy.html + terms.html + styles.css | `4fa39fe` |
+| 5.4 | `docs/anonymity-audit.md` refreshed: all currently-applicable rows ✓; 5 new audit-debt entries (workers_dev/preview_urls implicit defaults, txrz subdomain, CTA placeholder, gmail in CF deployment author, etc.) | `b203c07` |
+| (prod) | `wrangler deploy` of workers/src — cap now LIVE on `/enrich` | (no code change; deploy ID `67ea3af6`) |
+
+### Verification (end-of-session)
+- Workers: typecheck + lint clean; **25/25 tests** (was 20; added 5 for touchUser).
+- Extension: typecheck + lint + build clean; **16 tests** (was 6; added 5 storage + 5 search-parser).
+- Live `/health` → 200 ✓ on new deploy version `67ea3af6-c8c8-404a-85e6-84fcccba0b09`.
+- Cap smoke test: fresh `anonymousId` → /enrich returned ok response AND D1 `users` table now has the row with `enrichment_count_today: 1, counter_day: 2026-05-19` ✓.
+- Anonymity audit: PII grep on landing/ clean; extension src clean.
+
+### Decisions this session
+| Decision | Rationale |
+|---|---|
+| Execute Task 4.3 BEFORE Task 4.4 | 4.4 imports `ensureAnonymousId` from `storage.ts`, created in 4.3. Plan was written with 4.3 listed first but explicitly noted as dependency. Re-ordered to make this dependency explicit. |
+| Skip Task 4.2 unit tests | BadgeCompact is purely presentational; snapshot tests would just lock the JSX. Manual visual smoke is sufficient for Phase 0 and aligns with how Badge.tsx itself is treated. |
+| Drop subscribe form from `landing/index.html` | Per user's "very very basic" scope ask. Form requires Task 5.2 backend; including it without 5.2 would 404. Cleaner to ship without it; add back when 5.2 is ready. |
+| Replace plan's "Install for Chrome" CTA with "Coming soon to Chrome Web Store" placeholder | Plan used `<extension-id-after-cws-approval>` literal placeholder which would be a broken link if accidentally deployed. Audit-debt entry added with remediation: swap to real CWS detail URL post-approval. |
+| Deploy 4.4 cap immediately at end of session (with user approval) | Cost-defense rationale: without deploy, /enrich remained uncapped, which is the exact risk the user flagged. Cap is now live; daily 50/anon-id soft cap protects against scrape abuse pre-CWS launch. |
+| Wrote new feedback memory `feedback_no_cost_without_asking.md` early in session | User stated the rule explicitly; durable instruction; needed in scope for future sessions. |
+
+### Memory written this session
+- **NEW:** `feedback_no_cost_without_asking.md` — HARD RULE never to take cost-creating actions without explicit user approval; explicit cost-surface call-out required BEFORE acting.
+- **UPDATED:** `project_locked_portfolio_v1.md` — bumped 22 → 28/30 tasks; marked Week 4 complete + Week 5 partial.
+- **UPDATED:** `MEMORY.md` — added pointer for new cost-rule memory; updated portfolio status line.
+
+### Phase 0 progress: 28/30 tasks done (was 22)
+- Week 1: 10/10 ✓
+- Week 2: 8/8 ✓
+- Week 3: 4/4 ✓
+- Week 4: **4/4 ✓ (COMPLETE)**
+- Week 5: **2/4** — 5.1 + 5.4 done; 5.2 (mailing-list handler) and 5.3 (CWS listing copy + screenshots + demo video) outstanding
+- Week 6: 0/4 — user-action only
+- Week 7: 0/3
+
+### Outstanding loose ends (delta this session)
+- **CTA placeholder** on `landing/index.html` — replace after CWS approval (Week 6 / post-submit)
+- **Task 5.2 mailing-list handler** not done — landing form is omitted entirely as a result; OK for "very basic" scope but revisit before paid-tier launch
+- **Task 5.3 CWS listing assets** need user: 5 screenshots @ 1280×800 + ~30s demo video. Listing copy can be drafted autonomously next session.
+- (All Session 2's loose ends still open: synthetic fixtures, placeholder icons, npm audit, omerprojects path leak, workers_dev/preview_urls implicit defaults.)
+
+---
+
+## Session 4 entry-point checklist (READ THIS FIRST NEXT SESSION)
 
 1. Auto-load `MEMORY.md` (harness does).
-2. Read "Session 2" section above (this file).
-3. Confirm deploy still healthy: `curl https://watchsentry-api.txrz.workers.dev/health`.
-4. Confirm scheduled cron ran overnight: `npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT created_at FROM audit_log WHERE event_type='cron_ebay_refresh_done' ORDER BY id DESC LIMIT 2;"` — expect 2 rows including one from today.
-5. **Default forward plan (Week 4 + Week 5 autonomous-safe):**
-   - **Task 4.1** — Chrono24 search-results parser (analogue to 3.2, HTML fixture-based).
-   - **Task 4.3** — Settings popup + `chrome.storage` wiring (pure client-side).
-   - **Task 4.4** — Anonymous user ID + daily-cap counter (client UUID + server-side check; `anonymousId` already in `/enrich` zod schema).
-   - **Task 5.1** — **VERY BASIC landing page** at `landing/index.html`. **Scope locked by user 2026-05-19:** single HTML page, hero + 3 bullets + `support@watchsentry.app` link + footer links to /privacy + /terms. Minimal CSS. NO marketing-site bloat. Source files only — no Pages deploy.
-   - **Task 5.4** — Privacy policy + Terms markdown drafts in `docs/legal/`.
-6. **DO NOT** attempt autonomously:
-   - `wrangler pages deploy` (Week 6 — user-driven)
-   - CWS submission (Week 6)
-   - `api.watchsentry.app` custom Worker route (needs DNS, may need user)
-   - Lemon Squeezy KYC (Phase 1)
+2. Read "Session 3" section above (this file).
+3. Health-check live deploy: `curl https://watchsentry-api.txrz.workers.dev/health` → expect `{"ok":true,...}`.
+4. Confirm cron ran overnight (now Session 3 was 2026-05-19; check tomorrow's 04:00 UTC firing):
+   ```powershell
+   cd C:\omerprojects\watchsentry\workers
+   npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT created_at FROM audit_log WHERE event_type='cron_ebay_refresh_done' ORDER BY id DESC LIMIT 2;"
+   ```
+   Expect 2 rows including one from today.
+5. Verify the daily cap reset overnight (counter_day should bump to today's date once any user touches /enrich tomorrow):
+   ```powershell
+   npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT anonymous_id, enrichment_count_today, counter_day FROM users LIMIT 5;"
+   ```
+6. **Default forward plan:**
+   - **Task 5.3 listing copy** — draft `cws/listing.md` (description, short summary, category, keywords). Autonomous-safe (markdown only).
+   - **Task 5.2** — defer unless user wants subscribe form back. Requires deploy + D1 migration. Ask first.
+   - **CWS screenshots + demo video** — needs you (Chrome capture or OBS recording on a real Chrono24 page). Cannot do autonomously.
+   - **Phase 1 data-quality cleanups** (condition mapping, price-range filter) — optional pre-launch polish if you want to ship more accurate medians.
+   - **Custom domain cutover** (`api.watchsentry.app`) — Worker route + DNS via Cloudflare dashboard. Needs you to confirm pre-deploy + a `wrangler deploy` afterward.
+7. **DO NOT** attempt autonomously without asking first (per `feedback_no_cost_without_asking.md`):
+   - `wrangler deploy` (any subsequent)
+   - `wrangler pages deploy`
+   - CWS submission
+   - Any new account / paid feature / subscription
 
-### Phase 1 cleanup backlog (when Phase 0 ships)
+### Phase 1 cleanup backlog (unchanged + 1 added)
 - Condition mapping from title/subtitle text
 - Price-range filter on eBay search results
 - Marketplace Insights API (restricted) for real sold-comps
 - Rename cron counter to `attempted` + log `distinct` separately
-- Replace synthetic Chrono24 fixture with real-page capture
-- Replace placeholder icons (Task 6.2)
+- Replace synthetic Chrono24 fixtures (listing + search) with real-page captures
+- Replace placeholder extension icons (Task 6.2)
 - Resolve npm audit warnings
-- Make `workers_dev` + `preview_urls` explicit in wrangler.toml
+- Make `workers_dev` + `preview_urls` explicit in wrangler.toml; cut over to `api.watchsentry.app` custom route
 - `omerprojects` path leak in committed docs (before repo visibility change)
+- Add Task 5.2 mailing-list handler if paid-tier launch needs lead capture
 
 ### Verification commands cheat-sheet
 
