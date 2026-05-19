@@ -6,40 +6,47 @@
 </head>
 <body>
 <!--
-  SYNTHETIC fixture for Task 4.1 parser tests.
-  Generated from selector contract in the implementation plan:
-    - article.article-item for each card
-    - .article-item-brand for brand text
-    - "Ref. XXXX" text within the card for reference
-    - .price for listed price
-  Phase 1 launch blocker: re-capture a real Chrono24 search-results page and re-verify the parser
-  against the real DOM. See extension/tests/fixtures/README.md.
+  SYNTHETIC fixture mirroring the live Chrono24 search-results card structure
+  (captured 2026-05-19 from chrono24.com/search/index.htm?query=rolex+submariner+124060):
+
+    <div class="wt-listing-item js-listing-item listing-item">
+      <p class="text-bold text-sm text-sm-md text-ellipsis m-b-0">{brand} {model}</p>
+      <p class="text-ellipsis m-b-0 text-sm text-sm-md">{reference}</p>
+      <p class="text-bold text-md m-b-0">${price}</p>
+      ...
+    </div>
+
+  Phase 1 launch blocker: replace with a real-page capture (see tests/fixtures/README.md).
 -->
 
 <main>
-  <article class="article-item" data-listing-id="L1">
-    <span class="article-item-brand">Rolex</span>
-    <p class="article-item-subtitle">Submariner Date — Ref. 126610LN</p>
-    <span class="price">$13,499</span>
-  </article>
+  <div class="wt-listing-item js-listing-item listing-item">
+    <p class="text-bold text-sm text-sm-md text-ellipsis m-b-0">Rolex Submariner Date</p>
+    <p class="text-ellipsis m-b-0 text-sm text-sm-md">126610LN</p>
+    <p class="text-bold text-md m-b-0">$13,499</p>
+    <p class="text-sm text-muted">+ $99 for shipping</p>
+  </div>
 
-  <article class="article-item" data-listing-id="L2">
-    <span class="article-item-brand">Rolex</span>
-    <p class="article-item-subtitle">Submariner No-Date — Ref. 124060</p>
-    <span class="price">$10,250</span>
-  </article>
+  <div class="wt-listing-item js-listing-item listing-item">
+    <p class="text-bold text-sm text-sm-md text-ellipsis m-b-0">Rolex Submariner (No Date)</p>
+    <p class="text-ellipsis m-b-0 text-sm text-sm-md">124060</p>
+    <p class="text-bold text-md m-b-0">$10,250</p>
+    <p class="text-sm text-muted">+ $101 for shipping</p>
+  </div>
 
-  <article class="article-item" data-listing-id="L3">
-    <span class="article-item-brand">Rolex</span>
-    <p class="article-item-subtitle">Submariner Hulk — Ref. 116610LV</p>
-    <span class="price">$18,000</span>
-  </article>
+  <div class="wt-listing-item js-listing-item listing-item">
+    <p class="text-bold text-sm text-sm-md text-ellipsis m-b-0">Rolex Submariner Hulk</p>
+    <p class="text-ellipsis m-b-0 text-sm text-sm-md">116610LV</p>
+    <p class="text-bold text-md m-b-0">$18,000</p>
+    <p class="text-sm text-muted">+ $120 for shipping</p>
+  </div>
 
-  <article class="article-item" data-listing-id="L4">
-    <span class="article-item-brand">Rolex</span>
-    <p class="article-item-subtitle">No reference quoted in this card</p>
-    <span class="price">€9,500</span>
-  </article>
+  <div class="wt-listing-item js-listing-item listing-item">
+    <p class="text-bold text-sm text-sm-md text-ellipsis m-b-0">Rolex Submariner Vintage</p>
+    <p class="text-ellipsis m-b-0 text-sm text-sm-md">Reference not quoted</p>
+    <p class="text-bold text-md m-b-0">€9,500</p>
+    <p class="text-sm text-muted">+ €30 for shipping</p>
+  </div>
 </main>
 
 </body>

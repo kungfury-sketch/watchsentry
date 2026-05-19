@@ -11,31 +11,41 @@ const API_BASE = "https://watchsentry-api.txrz.workers.dev";
 const MAX_CARDS_PER_PAGE = 50;
 
 function injectListingMountPoint(): HTMLElement {
-  const anchor = document.querySelector(".js-detail-page-price-section") ?? document.body;
   const mount = document.createElement("div");
   mount.id = "watchsentry-mount";
-  anchor.parentElement?.insertBefore(mount, anchor);
+  const anchor =
+    document.querySelector(".detail-page-price") ??
+    document.querySelector(".js-detail-page-price-section");
+  if (anchor?.parentElement) {
+    anchor.parentElement.insertBefore(mount, anchor);
+  } else {
+    document.body.prepend(mount);
+  }
   return mount;
 }
 
 async function runListing(settings: Settings) {
   const parsed = parseChrono24Listing(document);
-  if (!parsed) return;
+  if (!parsed) {
+    console.warn("[WatchSentry] parser returned null on listing page");
+    return;
+  }
+  console.info("[WatchSentry] parsed", parsed);
 
   const mount = injectListingMountPoint();
   render(<Badge status="loading" />, mount);
 
   try {
-    const enriched = await enrichListing(
-      {
-        brand: parsed.brand,
-        reference: parsed.referenceNumber,
-        condition: parsed.conditionTier,
-        listedPriceUsd: parsed.listedPriceUsd ?? undefined,
-        anonymousId: settings.anonymousId,
-      },
-      { apiBase: API_BASE },
-    );
+    const requestBody = {
+      brand: parsed.brand,
+      reference: parsed.referenceNumber,
+      condition: parsed.conditionTier,
+      listedPriceUsd: parsed.listedPriceUsd ?? undefined,
+      anonymousId: settings.anonymousId,
+    };
+    console.info("[WatchSentry] request body", requestBody);
+    const enriched = await enrichListing(requestBody, { apiBase: API_BASE });
+    console.info("[WatchSentry] response", enriched);
     render(
       <Badge
         status={enriched.status}
@@ -46,7 +56,8 @@ async function runListing(settings: Settings) {
       />,
       mount,
     );
-  } catch {
+  } catch (err) {
+    console.error("[WatchSentry] enrich failed", err);
     render(<Badge status="no_data" />, mount);
   }
 }

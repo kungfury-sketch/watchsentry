@@ -14,7 +14,7 @@ function parseFixture() {
 }
 
 describe("parseChrono24Search", () => {
-  it("returns one card per article.article-item", () => {
+  it("returns one card per .wt-listing-item", () => {
     const cards = parseFixture();
     expect(cards).toHaveLength(4);
   });
@@ -24,7 +24,7 @@ describe("parseChrono24Search", () => {
     for (const c of cards) expect(c.brand).toBe("Rolex");
   });
 
-  it("extracts reference number from subtitle text", () => {
+  it("extracts reference number from the dedicated ref line", () => {
     const cards = parseFixture();
     expect(cards[0]?.referenceNumber).toBe("126610LN");
     expect(cards[1]?.referenceNumber).toBe("124060");
@@ -32,12 +32,11 @@ describe("parseChrono24Search", () => {
     expect(cards[3]?.referenceNumber).toBeNull();
   });
 
-  it("parses listed price in USD; non-USD currencies returned as-parsed number", () => {
+  it("parses listed price in USD; non-USD currencies fall back to the parsed number", () => {
     const cards = parseFixture();
     expect(cards[0]?.listedPriceUsd).toBe(13499);
     expect(cards[1]?.listedPriceUsd).toBe(10250);
     expect(cards[2]?.listedPriceUsd).toBe(18000);
-    // €9,500 has no $ prefix — parser pulls the digits as a fallback price
     expect(typeof cards[3]?.listedPriceUsd).toBe("number");
   });
 

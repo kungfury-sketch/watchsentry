@@ -18,5 +18,5 @@ export default defineManifest({
     },
   ],
   permissions: ["storage"],
-  host_permissions: ["https://watchsentry-api.*.workers.dev/*"],
+  host_permissions: ["https://watchsentry-api.txrz.workers.dev/*"],
 });
