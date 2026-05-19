@@ -9,19 +9,20 @@ export type Chrono24Listing = {
 };
 
 export function parseChrono24Listing(doc: Document): Chrono24Listing | null {
-  // Chrono24 listing pages embed structured data in <script type="application/ld+json">
+  // Chrono24 listing pages embed structured data in <script type="application/ld+json">.
+  // The Product node may be at the top level OR nested inside an @graph array.
   const ldNodes = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
   for (const node of ldNodes) {
     try {
       const data = JSON.parse(node.textContent ?? "");
-      const type = Array.isArray(data["@type"]) ? data["@type"][0] : data["@type"];
-      if (type !== "Product") continue;
+      const product = findProduct(data);
+      if (!product) continue;
 
-      const brand = data.brand?.name ?? data.brand;
-      const sku = data.sku ?? data.mpn ?? data.model;
+      const brand = product.brand?.name ?? product.brand;
+      const sku = product.sku ?? product.mpn ?? product.model;
       if (!brand || !sku) continue;
 
-      const offer = Array.isArray(data.offers) ? data.offers[0] : data.offers;
+      const offer = Array.isArray(product.offers) ? product.offers[0] : product.offers;
       const priceUsd = offer?.priceCurrency === "USD" ? Number.parseFloat(offer.price) : null;
 
       const condition = mapSchemaCondition(offer?.itemCondition);
@@ -29,13 +30,27 @@ export function parseChrono24Listing(doc: Document): Chrono24Listing | null {
       return {
         brand: String(brand),
         referenceNumber: String(sku),
-        model: data.model ? String(data.model) : undefined,
+        model: product.model ? String(product.model) : undefined,
         conditionTier: condition,
         listedPriceUsd: priceUsd,
-        listingId: data.productID ? String(data.productID) : undefined,
+        listingId: product.productID ? String(product.productID) : undefined,
       };
     } catch {
       // continue to next script tag
+    }
+  }
+  return null;
+}
+
+// biome-ignore lint/suspicious/noExplicitAny: walks unknown JSON-LD structure
+function findProduct(node: any): any | null {
+  if (!node || typeof node !== "object") return null;
+  const type = Array.isArray(node["@type"]) ? node["@type"][0] : node["@type"];
+  if (type === "Product") return node;
+  if (Array.isArray(node["@graph"])) {
+    for (const item of node["@graph"]) {
+      const found = findProduct(item);
+      if (found) return found;
     }
   }
   return null;

@@ -31,4 +31,33 @@ describe("parseChrono24Listing", () => {
     );
     expect(parseChrono24Listing(doc)).toBeNull();
   });
+
+  it("finds Product nested inside @graph (current Chrono24 layout)", () => {
+    const graphHtml = `<!doctype html><html><head><script type="application/ld+json">${JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          { "@type": "BreadcrumbList", itemListElement: [] },
+          {
+            "@type": "Product",
+            name: "Rolex Submariner",
+            brand: { "@type": "Brand", name: "Rolex" },
+            sku: "124060",
+            productID: "graphed-listing-id",
+            offers: {
+              "@type": "Offer",
+              priceCurrency: "USD",
+              price: "11590",
+            },
+          },
+        ],
+      },
+    )}</script></head><body></body></html>`;
+    const doc = new DOMParser().parseFromString(graphHtml, "text/html");
+    const r = parseChrono24Listing(doc);
+    expect(r?.brand).toBe("Rolex");
+    expect(r?.referenceNumber).toBe("124060");
+    expect(r?.listedPriceUsd).toBe(11590);
+    expect(r?.listingId).toBe("graphed-listing-id");
+  });
 });
