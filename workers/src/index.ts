@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { runDailyRefresh } from "./cron";
 import { enrich, enrichRequestSchema } from "./enrich";
 
@@ -10,6 +11,16 @@ export type Env = {
 };
 
 const app = new Hono<{ Bindings: Env }>();
+
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+    maxAge: 86400,
+  }),
+);
 
 app.get("/health", (c) => c.json({ ok: true, name: "watchsentry-api" }));
 
