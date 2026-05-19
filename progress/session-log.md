@@ -272,30 +272,86 @@ If eBay is still blocked at start of Session 2, default action per Section 9 of 
 
 ---
 
-## Session 2 entry-point checklist (READ THIS FIRST NEXT SESSION)
+## Session 2 — Week 2 backend live (2026-05-19, ~2 hrs)
+
+**Hours:** ~2 (autonomous after user confirmed eBay secrets in)
+**Mode:** executing-plans + TDD + verification-before-completion
+
+### Context entering session
+- User pasted `wrangler secret list` output showing both `EBAY_APP_ID` and `EBAY_CERT_ID` present → eBay block lifted.
+- Per portfolio Session 4 entry-point, the "if eBay activated" branch was pre-authorized: execute Task 2.4 → 2.7 → 2.8.
+- Task 2.3 (eBay reg + secrets storage) implicitly closed as a side-effect of secrets landing.
+
+### Tasks completed
+| Task | Description | Commit |
+|---|---|---|
+| 2.3 | eBay Dev App reg + secrets stored | (no code — closed by user) |
+| 2.4 | eBay Browse API client (impl + 8 tests: 5 condition + 3 fetch) | `b342463` |
+| 2.7 | `runDailyRefresh` cron + scheduled handler wiring + first remote deploy + debug-route seed + verify + remove debug + redeploy | `abac655` |
+| 2.8 | `/enrich` endpoint + KV 6h cache + Zod validation + 6 new tests + four-path integration smoke | `6bb7c96` |
+| (chore) | Extension `API_BASE` → `https://watchsentry-api.txrz.workers.dev` + rebuild | `eff7310` |
+
+### Verification (end-of-session)
+- Workers: typecheck + lint clean; **20/20 tests** (4 fair-value + 8 ebay + 6 enrich + 2 health).
+- Extension: typecheck + lint clean; **6/6 tests**; build clean (`dist/` ~16 KB).
+- Worker deployed: `https://watchsentry-api.txrz.workers.dev`, version `b7c4dd00-16d9-4e2e-9c48-2e229becff09`, cron `0 4 * * *` registered.
+- D1: **6,626 distinct `sold_comps`** across 50 references (top 5: Rolex 2986 / Tudor 627 / Omega 366 / Grand Seiko 333 / Breitling 306).
+- audit_log: `cron_ebay_refresh_done` row present.
+- `/enrich` smoke (Rolex 124060 fair $9500): `medianUsd 13499, sampleSize 200, delta -$3999 (-29.6%)` ✓.
+- Cache: instant on second hit ✓. Invalid → HTTP 400 ✓. Bogus brand/ref → `unknown_reference` ✓. Debug route confirmed 404 after removal ✓.
+
+### Data-quality findings (Phase 1 work; NOT blocking)
+1. **Condition mapping too coarse.** eBay Browse rarely returns `condition` for watch listings → 100% defaulted to `fair`. Phase 1: derive from title/subtitle, or accept Phase 0 only meaningfully serves `fair`.
+2. **`sold_at` is ingest-time, not sale-time.** Browse returns LIVE listings; `itemEndDate` rarely set on fixed-price → all comps `sold_at = new Date()`. Window query works but semantics need a doc note. True sold-comps require restricted Marketplace Insights API.
+3. **Search query too loose.** "Rolex 124060" returns straps/bands/parts ($145 alongside $14k). Need price-range filter (0.3×–3× expected MSRP per ref) before launch.
+4. **Cron's "inserted" counter misleading.** Returns 27172 because D1's `rows_written` counts `INSERT OR IGNORE` attempts. Distinct writes: 6626. Phase 1: rename to `attempted`, log `distinct` separately.
+
+### Audit-debt additions
+- `workers_dev = true` + `preview_urls = true` are implicit Wrangler defaults — make explicit in `wrangler.toml` before linking the `*.workers.dev` URL anywhere public.
+- `*.workers.dev` subdomain is `txrz` (auto-generated; doesn't visibly tie to other projects on the account). Cut over to `api.watchsentry.app` custom Worker route before CWS publish (Week 5).
+
+### Phase 0 progress: 22/30 tasks done (was 18)
+- Week 1: 10/10 ✓
+- Week 2: **8/8 ✓ (COMPLETE)** — 2.3 closed; 2.4 + 2.7 + 2.8 landed this session
+- Week 3: 4/4 ✓
+- Week 4: 0/4 — autonomous-safe
+- Week 5: 0/4 — 5.1 + 5.4 autonomous-safe; 5.2 (Pages deploy) + 5.3 (screenshots/video) need user action
+- Week 6: 0/4 — user-action only
+- Week 7: 0/3
+
+### Outstanding loose ends
+Unchanged from Session 1 + the four new data-quality items + two new audit-debt entries above.
+
+---
+
+## Session 3 entry-point checklist (READ THIS FIRST NEXT SESSION)
 
 1. Auto-load `MEMORY.md` (harness does).
-2. Read the "Session 1" section above.
-3. Check eBay secrets state:
-   ```powershell
-   cd C:\omerprojects\watchsentry\workers
-   wrangler secret list
-   ```
-   - If `EBAY_APP_ID` + `EBAY_CERT_ID` both shown → eBay activated; execute Task 2.4 (eBay API client + tests) → 2.7 (cron + first remote deploy) → 2.8 (/enrich endpoint with KV cache).
-   - If "Worker not found" still → eBay STILL not activated. Pivot to autonomous Week 4-5 prep work (see options below).
-4. **Autonomous options if eBay still blocked:**
-   - Task 4.1: Chrono24 search-results page parser (analogue to 3.2; HTML fixture-based).
-   - Task 4.3: Settings popup + chrome.storage wiring.
-   - Task 4.4 (client side): Anonymous user ID generation + daily-cap counter (server-side cap deferred to Task 2.8).
-   - Task 5.1 partial: Landing page HTML/CSS in `landing/` folder (no deploy).
-   - Task 5.3 partial: CWS listing copy draft in `cws/listing.md`.
-   - Privacy policy + Terms drafts in `docs/legal/` (Phase 1 prerequisite).
-5. **DO NOT** attempt these autonomously:
-   - `wrangler deploy` (real Cloudflare publish; creates public artifact)
-   - `wrangler pages deploy` (same reason)
-   - CWS submission
-   - Lemon Squeezy KYC
-   - Any Chrome Web Store actions
+2. Read "Session 2" section above (this file).
+3. Confirm deploy still healthy: `curl https://watchsentry-api.txrz.workers.dev/health`.
+4. Confirm scheduled cron ran overnight: `npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT created_at FROM audit_log WHERE event_type='cron_ebay_refresh_done' ORDER BY id DESC LIMIT 2;"` — expect 2 rows including one from today.
+5. **Default forward plan (Week 4 + Week 5 autonomous-safe):**
+   - **Task 4.1** — Chrono24 search-results parser (analogue to 3.2, HTML fixture-based).
+   - **Task 4.3** — Settings popup + `chrome.storage` wiring (pure client-side).
+   - **Task 4.4** — Anonymous user ID + daily-cap counter (client UUID + server-side check; `anonymousId` already in `/enrich` zod schema).
+   - **Task 5.1** — **VERY BASIC landing page** at `landing/index.html`. **Scope locked by user 2026-05-19:** single HTML page, hero + 3 bullets + `support@watchsentry.app` link + footer links to /privacy + /terms. Minimal CSS. NO marketing-site bloat. Source files only — no Pages deploy.
+   - **Task 5.4** — Privacy policy + Terms markdown drafts in `docs/legal/`.
+6. **DO NOT** attempt autonomously:
+   - `wrangler pages deploy` (Week 6 — user-driven)
+   - CWS submission (Week 6)
+   - `api.watchsentry.app` custom Worker route (needs DNS, may need user)
+   - Lemon Squeezy KYC (Phase 1)
+
+### Phase 1 cleanup backlog (when Phase 0 ships)
+- Condition mapping from title/subtitle text
+- Price-range filter on eBay search results
+- Marketplace Insights API (restricted) for real sold-comps
+- Rename cron counter to `attempted` + log `distinct` separately
+- Replace synthetic Chrono24 fixture with real-page capture
+- Replace placeholder icons (Task 6.2)
+- Resolve npm audit warnings
+- Make `workers_dev` + `preview_urls` explicit in wrangler.toml
+- `omerprojects` path leak in committed docs (before repo visibility change)
 
 ### Verification commands cheat-sheet
 
@@ -307,6 +363,9 @@ npm run typecheck && npm test && npm run lint
 # Extension
 cd C:\omerprojects\watchsentry\extension
 npm run typecheck && npm test && npm run lint && npm run build
+
+# Deployed worker
+curl https://watchsentry-api.txrz.workers.dev/health
 
 # Git state
 cd C:\omerprojects\watchsentry
