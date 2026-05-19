@@ -24,7 +24,7 @@ export type EnrichResponse = {
 };
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
-const DAILY_ENRICHMENT_CAP = 50;
+const DAILY_ENRICHMENT_CAP = 200;
 
 export function enrichmentCacheKey(args: {
   brand: string;
@@ -85,19 +85,20 @@ export async function touchUser(
 }
 
 export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichResponse> {
-  if (req.anonymousId) {
-    const u = await touchUser(env.DB, req.anonymousId);
-    if (u.capped) return { status: "no_data" };
-  }
-
   const cacheKey = enrichmentCacheKey({
     brand: req.brand,
     reference: req.reference,
     condition: req.condition,
   });
 
+  // Cache hits don't count toward the daily cap — the cap protects D1 work, not KV reads.
   const cached = await env.CACHE.get<EnrichResponse>(cacheKey, "json");
   if (cached) return maybeAttachDelta(cached, req.listedPriceUsd);
+
+  if (req.anonymousId) {
+    const u = await touchUser(env.DB, req.anonymousId);
+    if (u.capped) return { status: "no_data" };
+  }
 
   const ref = await findReference(env.DB, req.brand, req.reference);
   if (!ref) {

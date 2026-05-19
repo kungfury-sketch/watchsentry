@@ -55,22 +55,22 @@ describe("touchUser", () => {
   });
 
   it("resets count to 1 on a new day", async () => {
-    const { db } = mockDb({ enrichment_count_today: 49, counter_day: "2026-05-18" });
+    const { db } = mockDb({ enrichment_count_today: 199, counter_day: "2026-05-18" });
     const r = await touchUser(db, "anon-1", TODAY);
     expect(r).toEqual({ count: 1, capped: false });
   });
 
-  it("marks capped=true on the 51st call same-day", async () => {
-    const { db } = mockDb({ enrichment_count_today: 50, counter_day: TODAY });
+  it("marks capped=true on the 201st call same-day", async () => {
+    const { db } = mockDb({ enrichment_count_today: 200, counter_day: TODAY });
     const r = await touchUser(db, "anon-1", TODAY);
-    expect(r.count).toBe(51);
+    expect(r.count).toBe(201);
     expect(r.capped).toBe(true);
   });
 
-  it("marks capped=false at the 50th call (boundary)", async () => {
-    const { db } = mockDb({ enrichment_count_today: 49, counter_day: TODAY });
+  it("marks capped=false at the 200th call (boundary)", async () => {
+    const { db } = mockDb({ enrichment_count_today: 199, counter_day: TODAY });
     const r = await touchUser(db, "anon-1", TODAY);
-    expect(r.count).toBe(50);
+    expect(r.count).toBe(200);
     expect(r.capped).toBe(false);
   });
 });
