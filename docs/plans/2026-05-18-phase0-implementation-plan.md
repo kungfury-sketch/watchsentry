@@ -36,7 +36,7 @@ The final folder layout differs from the path examples in early tasks below. Use
 ## Hard rules applied to this plan
 
 - **Strict anonymity** (`feedback_anonymity_strict.md`): every external account uses brand display name; commit author email is the GitHub `noreply` address; commit author name is `WatchSentry Bot`; domain WHOIS privacy on; support email is `support@<brand>.com`. Anonymity-audit checkpoint at end of Week 5 BEFORE any public artifact (CWS submission, landing-page DNS go-live).
-- **Strict project isolation** (`feedback_strict_project_isolation.md`): every artifact in this plan lives under `C:\omerprojects\watchsentry\` (or final-named folder). Nothing leaks into the `passive-income-empire/` workspace.
+- **Strict project isolation** (`feedback_strict_project_isolation.md`): every artifact in this plan lives under `<repo>\` (or final-named folder). Nothing leaks into the `passive-income-empire/` workspace.
 - **Cloudflare-native** (`reference_cloudflare_account.md`): no Fly.io / Railway / Hetzner / Supabase / Vercel. Browser Rendering deferred to Phase 1.
 - **Hours envelope:** 40–60 hrs total over 5–7 weeks at 7–10 hrs/week.
 - **Per-session progress log:** end every work session by appending to `progress/session-log.md` with: date, hours, tasks completed, blockers, next-session entry point. (Per `feedback_working_style.md`.)
@@ -58,7 +58,7 @@ The final folder layout differs from the path examples in early tasks below. Use
 ### Task 1.1 — Pre-flight anonymity decision checklist
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\docs\anonymity-audit.md`
+- Create: `<repo>\docs\anonymity-audit.md`
 
 **Step 1: Verify each public-facing surface has an anonymity plan**
 
@@ -114,22 +114,22 @@ Domain purchase happens in Task 6.3 after CWS submission. Reason: domain renewal
 ### Task 1.3 — Create root folder structure
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\` (root)
-- Create: `C:\omerprojects\watchsentry\extension\`
-- Create: `C:\omerprojects\watchsentry\workers\`
-- Create: `C:\omerprojects\watchsentry\landing\`
-- Create: `C:\omerprojects\watchsentry\docs\`
-- Create: `C:\omerprojects\watchsentry\progress\`
+- Create: `<repo>\` (root)
+- Create: `<repo>\extension\`
+- Create: `<repo>\workers\`
+- Create: `<repo>\landing\`
+- Create: `<repo>\docs\`
+- Create: `<repo>\progress\`
 
 **Step 1: Create the folder tree**
 
 PowerShell:
 ```powershell
-New-Item -ItemType Directory -Path "C:\omerprojects\watchsentry\extension" -Force
-New-Item -ItemType Directory -Path "C:\omerprojects\watchsentry\workers" -Force
-New-Item -ItemType Directory -Path "C:\omerprojects\watchsentry\landing" -Force
-New-Item -ItemType Directory -Path "C:\omerprojects\watchsentry\docs" -Force
-New-Item -ItemType Directory -Path "C:\omerprojects\watchsentry\progress" -Force
+New-Item -ItemType Directory -Path "<repo>\extension" -Force
+New-Item -ItemType Directory -Path "<repo>\workers" -Force
+New-Item -ItemType Directory -Path "<repo>\landing" -Force
+New-Item -ItemType Directory -Path "<repo>\docs" -Force
+New-Item -ItemType Directory -Path "<repo>\progress" -Force
 ```
 
 The plan doc (this file) is already at `docs/plans/`. Anonymity audit lives at `docs/anonymity-audit.md` from Task 1.1.
@@ -138,7 +138,7 @@ The plan doc (this file) is already at `docs/plans/`. Anonymity audit lives at `
 
 PowerShell:
 ```powershell
-Get-ChildItem C:\omerprojects\watchsentry
+Get-ChildItem <workspace>\watchsentry
 ```
 
 Expected output: five subfolders (`docs`, `extension`, `landing`, `progress`, `workers`).
@@ -148,8 +148,8 @@ Expected output: five subfolders (`docs`, `extension`, `landing`, `progress`, `w
 ### Task 1.4 — Root README + .gitignore
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\README.md`
-- Create: `C:\omerprojects\watchsentry\.gitignore`
+- Create: `<repo>\README.md`
+- Create: `<repo>\.gitignore`
 
 **Step 1: Write README.md**
 
@@ -192,7 +192,7 @@ coverage/
 
 PowerShell:
 ```powershell
-Get-ChildItem C:\omerprojects\watchsentry -Force
+Get-ChildItem <workspace>\watchsentry -Force
 ```
 
 Expected: see `.gitignore`, `README.md`, plus the 5 folders.
@@ -206,10 +206,10 @@ Expected: see `.gitignore`, `README.md`, plus the 5 folders.
 **Step 1: Init git**
 
 ```powershell
-git -C C:\omerprojects\watchsentry init
+git -C <workspace>\watchsentry init
 ```
 
-Expected: `Initialized empty Git repository in C:/omerprojects/watchsentry/.git/`
+Expected: `Initialized empty Git repository in <repo>/.git/`
 
 **Step 2: User retrieves their GitHub noreply email**
 
@@ -218,15 +218,15 @@ User action: Go to https://github.com/settings/emails → "Keep my email address
 **Step 3: Configure git author identity to brand + noreply**
 
 ```powershell
-git -C C:\omerprojects\watchsentry config user.email "<paste-noreply-email>"
-git -C C:\omerprojects\watchsentry config user.name "WatchSentry Bot"
+git -C <workspace>\watchsentry config user.email "<paste-noreply-email>"
+git -C <workspace>\watchsentry config user.name "WatchSentry Bot"
 ```
 
 **Step 4: Verify config**
 
 ```powershell
-git -C C:\omerprojects\watchsentry config user.email
-git -C C:\omerprojects\watchsentry config user.name
+git -C <workspace>\watchsentry config user.email
+git -C <workspace>\watchsentry config user.name
 ```
 
 Expected: noreply email + "WatchSentry Bot". If a real name or personal email appears, STOP and re-run Step 3 — anonymity audit failed.
@@ -234,14 +234,14 @@ Expected: noreply email + "WatchSentry Bot". If a real name or personal email ap
 **Step 5: Initial commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add .
-git -C C:\omerprojects\watchsentry commit -m "chore: initial scaffold"
+git -C <workspace>\watchsentry add .
+git -C <workspace>\watchsentry commit -m "chore: initial scaffold"
 ```
 
 **Step 6: Verify author identity on the commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry log -1 --pretty=fuller
+git -C <workspace>\watchsentry log -1 --pretty=fuller
 ```
 
 Expected: `Author: WatchSentry Bot <<id>+<username>@users.noreply.github.com>`. If anything else, reset and redo.
@@ -259,14 +259,14 @@ User action: Go to https://github.com/new → name `watchsentry` (or final-named
 **Step 2: Get the SSH or HTTPS URL and add as remote**
 
 ```powershell
-git -C C:\omerprojects\watchsentry remote add origin git@github.com:<gh-username>/watchsentry.git
+git -C <workspace>\watchsentry remote add origin git@github.com:<gh-username>/watchsentry.git
 ```
 
 **Step 3: Push**
 
 ```powershell
-git -C C:\omerprojects\watchsentry branch -M main
-git -C C:\omerprojects\watchsentry push -u origin main
+git -C <workspace>\watchsentry branch -M main
+git -C <workspace>\watchsentry push -u origin main
 ```
 
 **Step 4: Verify on GitHub**
@@ -291,9 +291,9 @@ User action: open the repo page; confirm visibility = Private; confirm last comm
 Commit:
 
 ```powershell
-git -C C:\omerprojects\watchsentry add progress/session-log.md
-git -C C:\omerprojects\watchsentry commit -m "docs: start per-session progress log"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add progress/session-log.md
+git -C <workspace>\watchsentry commit -m "docs: start per-session progress log"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -379,7 +379,7 @@ Write the IDs into `docs/cloudflare-bindings.md`:
 Add `docs/cloudflare-bindings.md` to `.gitignore`:
 
 ```powershell
-Add-Content C:\omerprojects\watchsentry\.gitignore "docs/cloudflare-bindings.md`n"
+Add-Content <repo>\.gitignore "docs/cloudflare-bindings.md`n"
 ```
 
 ---
@@ -387,16 +387,16 @@ Add-Content C:\omerprojects\watchsentry\.gitignore "docs/cloudflare-bindings.md`
 ### Task 1.9 — Workers project scaffold (Hono + TS)
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\workers\package.json`
-- Create: `C:\omerprojects\watchsentry\workers\tsconfig.json`
-- Create: `C:\omerprojects\watchsentry\workers\wrangler.toml`
-- Create: `C:\omerprojects\watchsentry\workers\src\index.ts`
-- Create: `C:\omerprojects\watchsentry\workers\biome.json`
+- Create: `<repo>\workers\package.json`
+- Create: `<repo>\workers\tsconfig.json`
+- Create: `<repo>\workers\wrangler.toml`
+- Create: `<repo>\workers\src\index.ts`
+- Create: `<repo>\workers\biome.json`
 
 **Step 1: Init Node project**
 
 ```powershell
-cd C:\omerprojects\watchsentry\workers
+cd <repo>\workers
 npm init -y
 ```
 
@@ -522,9 +522,9 @@ Expected: `{"ok":true,"name":"watchsentry-api"}`. If anything else, debug before
 **Step 9: Stop dev server (Ctrl+C). Commit.**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers .gitignore
-git -C C:\omerprojects\watchsentry commit -m "feat(workers): scaffold Hono app + Cloudflare bindings"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers .gitignore
+git -C <workspace>\watchsentry commit -m "feat(workers): scaffold Hono app + Cloudflare bindings"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -532,8 +532,8 @@ git -C C:\omerprojects\watchsentry push
 ### Task 1.10 — Vitest harness + first green test
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\workers\vitest.config.ts`
-- Create: `C:\omerprojects\watchsentry\workers\tests\health.test.ts`
+- Create: `<repo>\workers\vitest.config.ts`
+- Create: `<repo>\workers\tests\health.test.ts`
 
 **Step 1: vitest.config.ts**
 
@@ -578,9 +578,9 @@ Expected: 1 test passing.
 **Step 4: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers/vitest.config.ts workers/tests
-git -C C:\omerprojects\watchsentry commit -m "test(workers): add vitest + health smoke"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers/vitest.config.ts workers/tests
+git -C <workspace>\watchsentry commit -m "test(workers): add vitest + health smoke"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -609,8 +609,8 @@ If any check fails, fix before proceeding.
 ### Task 2.1 — D1 schema migration
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\workers\migrations\0001_init.sql`
-- Create: `C:\omerprojects\watchsentry\workers\tests\schema.test.ts`
+- Create: `<repo>\workers\migrations\0001_init.sql`
+- Create: `<repo>\workers\tests\schema.test.ts`
 
 **Step 1: Write the schema — 0001_init.sql**
 
@@ -680,7 +680,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_type_time ON audit_log(event_type, created_
 **Step 2: Apply migration to remote D1**
 
 ```powershell
-cd C:\omerprojects\watchsentry\workers
+cd <repo>\workers
 wrangler d1 execute watchsentry-db --remote --file=./migrations/0001_init.sql
 ```
 
@@ -707,9 +707,9 @@ Expected: 5 tables (`audit_log`, `listings_snapshot`, `sold_comps`, `users`, `wa
 **Step 5: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers/migrations
-git -C C:\omerprojects\watchsentry commit -m "feat(db): initial D1 schema"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers/migrations
+git -C <workspace>\watchsentry commit -m "feat(db): initial D1 schema"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -717,7 +717,7 @@ git -C C:\omerprojects\watchsentry push
 ### Task 2.2 — Seed top-50 watch references
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\workers\migrations\0002_seed_refs.sql`
+- Create: `<repo>\workers\migrations\0002_seed_refs.sql`
 
 **Step 1: Write the seed SQL**
 
@@ -795,9 +795,9 @@ Expected: `n = 50`.
 **Step 4: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers/migrations/0002_seed_refs.sql
-git -C C:\omerprojects\watchsentry commit -m "feat(db): seed top-50 watch references"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers/migrations/0002_seed_refs.sql
+git -C <workspace>\watchsentry commit -m "feat(db): seed top-50 watch references"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -818,7 +818,7 @@ When approved, copy `App ID` (Client ID) and `Cert ID` (Client Secret).
 **Step 3: Store as Wrangler secrets (NOT in wrangler.toml)**
 
 ```powershell
-cd C:\omerprojects\watchsentry\workers
+cd <repo>\workers
 wrangler secret put EBAY_APP_ID
 # paste App ID at prompt
 wrangler secret put EBAY_CERT_ID
@@ -858,8 +858,8 @@ Expected: HTTP 200 with `access_token` field. If 401, double-check the credentia
 ### Task 2.4 — eBay API wrapper module
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\workers\src\ebay.ts`
-- Create: `C:\omerprojects\watchsentry\workers\tests\ebay.test.ts`
+- Create: `<repo>\workers\src\ebay.ts`
+- Create: `<repo>\workers\tests\ebay.test.ts`
 
 **Step 1: Write the failing test — tests/ebay.test.ts**
 
@@ -1010,9 +1010,9 @@ Expected: all 6 tests pass (5 condition + 1 fetch).
 **Step 5: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers/src/ebay.ts workers/tests/ebay.test.ts
-git -C C:\omerprojects\watchsentry commit -m "feat(workers): eBay Browse API client"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers/src/ebay.ts workers/tests/ebay.test.ts
+git -C <workspace>\watchsentry commit -m "feat(workers): eBay Browse API client"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -1020,8 +1020,8 @@ git -C C:\omerprojects\watchsentry push
 ### Task 2.5 — Fair-value calculation
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\workers\src\fair-value.ts`
-- Create: `C:\omerprojects\watchsentry\workers\tests\fair-value.test.ts`
+- Create: `<repo>\workers\src\fair-value.ts`
+- Create: `<repo>\workers\tests\fair-value.test.ts`
 
 **Step 1: Failing test**
 
@@ -1120,9 +1120,9 @@ Expected: all tests pass.
 **Step 5: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers/src/fair-value.ts workers/tests/fair-value.test.ts
-git -C C:\omerprojects\watchsentry commit -m "feat(workers): fair-value weighted-median calc"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers/src/fair-value.ts workers/tests/fair-value.test.ts
+git -C <workspace>\watchsentry commit -m "feat(workers): fair-value weighted-median calc"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -1130,8 +1130,8 @@ git -C C:\omerprojects\watchsentry push
 ### Task 2.6 — D1 repository module + tests
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\workers\src\repo.ts`
-- Create: `C:\omerprojects\watchsentry\workers\tests\repo.test.ts` (uses Miniflare-emulated D1 via `wrangler dev --local`; OR test the SQL strings statically + rely on integration test in Task 2.8)
+- Create: `<repo>\workers\src\repo.ts`
+- Create: `<repo>\workers\tests\repo.test.ts` (uses Miniflare-emulated D1 via `wrangler dev --local`; OR test the SQL strings statically + rely on integration test in Task 2.8)
 
 For Phase 0 simplicity, write the repo module and rely on the deploy-side integration smoke (Task 2.8) instead of unit tests for repo.ts. Mark this as accepted tradeoff in `docs/anonymity-audit.md` style debt note.
 
@@ -1215,9 +1215,9 @@ export async function getFairValueInputsFor(
 **Step 2: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers/src/repo.ts
-git -C C:\omerprojects\watchsentry commit -m "feat(workers): D1 repository module"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers/src/repo.ts
+git -C <workspace>\watchsentry commit -m "feat(workers): D1 repository module"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -1225,8 +1225,8 @@ git -C C:\omerprojects\watchsentry push
 ### Task 2.7 — Cron handler: daily eBay refresh
 
 **Files:**
-- Modify: `C:\omerprojects\watchsentry\workers\src\index.ts`
-- Create: `C:\omerprojects\watchsentry\workers\src\cron.ts`
+- Modify: `<repo>\workers\src\index.ts`
+- Create: `<repo>\workers\src\cron.ts`
 
 **Step 1: src/cron.ts**
 
@@ -1288,7 +1288,7 @@ export default {
 **Step 3: Deploy worker to Cloudflare**
 
 ```powershell
-cd C:\omerprojects\watchsentry\workers
+cd <repo>\workers
 npm run deploy
 ```
 
@@ -1335,9 +1335,9 @@ Delete the debug route from `src/index.ts`. Redeploy.
 **Step 7: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers/src
-git -C C:\omerprojects\watchsentry commit -m "feat(workers): daily cron eBay refresh + audit log"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers/src
+git -C <workspace>\watchsentry commit -m "feat(workers): daily cron eBay refresh + audit log"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -1345,9 +1345,9 @@ git -C C:\omerprojects\watchsentry push
 ### Task 2.8 — Enrich endpoint
 
 **Files:**
-- Modify: `C:\omerprojects\watchsentry\workers\src\index.ts`
-- Create: `C:\omerprojects\watchsentry\workers\src\enrich.ts`
-- Create: `C:\omerprojects\watchsentry\workers\tests\enrich.test.ts`
+- Modify: `<repo>\workers\src\index.ts`
+- Create: `<repo>\workers\src\enrich.ts`
+- Create: `<repo>\workers\tests\enrich.test.ts`
 
 **Step 1: Failing test — tests/enrich.test.ts**
 
@@ -1491,9 +1491,9 @@ Expected: HTTP 200 with `status: "ok"`, `fairValue.medianUsd: <number>`, `delta:
 **Step 7: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add workers
-git -C C:\omerprojects\watchsentry commit -m "feat(workers): /enrich endpoint with KV cache + zod validation"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add workers
+git -C <workspace>\watchsentry commit -m "feat(workers): /enrich endpoint with KV cache + zod validation"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -1515,19 +1515,19 @@ git -C C:\omerprojects\watchsentry push
 ### Task 3.1 — Extension scaffold (Vite + crxjs + TS + Preact)
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\extension\package.json`
-- Create: `C:\omerprojects\watchsentry\extension\tsconfig.json`
-- Create: `C:\omerprojects\watchsentry\extension\vite.config.ts`
-- Create: `C:\omerprojects\watchsentry\extension\manifest.config.ts`
-- Create: `C:\omerprojects\watchsentry\extension\src\content\index.tsx`
-- Create: `C:\omerprojects\watchsentry\extension\src\background\index.ts`
-- Create: `C:\omerprojects\watchsentry\extension\src\popup\index.html`
-- Create: `C:\omerprojects\watchsentry\extension\src\popup\popup.tsx`
+- Create: `<repo>\extension\package.json`
+- Create: `<repo>\extension\tsconfig.json`
+- Create: `<repo>\extension\vite.config.ts`
+- Create: `<repo>\extension\manifest.config.ts`
+- Create: `<repo>\extension\src\content\index.tsx`
+- Create: `<repo>\extension\src\background\index.ts`
+- Create: `<repo>\extension\src\popup\index.html`
+- Create: `<repo>\extension\src\popup\popup.tsx`
 
 **Step 1: Init project**
 
 ```powershell
-cd C:\omerprojects\watchsentry\extension
+cd <repo>\extension
 npm init -y
 npm install preact zod
 npm install -D vite @crxjs/vite-plugin typescript @types/chrome @biomejs/biome vitest @testing-library/preact @testing-library/dom jsdom
@@ -1682,14 +1682,14 @@ Expected: `dist/` folder created with built ext.
 
 **Step 10: Load unpacked in Chrome**
 
-User action: `chrome://extensions` → toggle Developer Mode → "Load unpacked" → select `C:\omerprojects\watchsentry\extension\dist`. WatchSentry should appear; visit any chrono24.com listing; open DevTools console → see "WatchSentry loaded on ...".
+User action: `chrome://extensions` → toggle Developer Mode → "Load unpacked" → select `<repo>\extension\dist`. WatchSentry should appear; visit any chrono24.com listing; open DevTools console → see "WatchSentry loaded on ...".
 
 **Step 11: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add extension
-git -C C:\omerprojects\watchsentry commit -m "feat(extension): MV3 scaffold (Vite+crxjs+Preact)"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add extension
+git -C <workspace>\watchsentry commit -m "feat(extension): MV3 scaffold (Vite+crxjs+Preact)"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -1697,9 +1697,9 @@ git -C C:\omerprojects\watchsentry push
 ### Task 3.2 — DOM parser for Chrono24 listing page
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\extension\src\parsers\chrono24-listing.ts`
-- Create: `C:\omerprojects\watchsentry\extension\tests\parsers\chrono24-listing.test.ts`
-- Create: `C:\omerprojects\watchsentry\extension\tests\fixtures\chrono24-listing-rolex-124060.html` (saved snapshot of a real listing page; user provides via right-click → "Save page as" in Chrome on a representative listing)
+- Create: `<repo>\extension\src\parsers\chrono24-listing.ts`
+- Create: `<repo>\extension\tests\parsers\chrono24-listing.test.ts`
+- Create: `<repo>\extension\tests\fixtures\chrono24-listing-rolex-124060.html` (saved snapshot of a real listing page; user provides via right-click → "Save page as" in Chrome on a representative listing)
 
 **Step 1: Capture a real-page fixture (one-time)**
 
@@ -1831,9 +1831,9 @@ Expected: 4 passing. If fixture parse fails, inspect actual ld+json structure in
 **Step 6: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add extension/src/parsers extension/tests
-git -C C:\omerprojects\watchsentry commit -m "feat(ext): Chrono24 listing parser w/ ld+json"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add extension/src/parsers extension/tests
+git -C <workspace>\watchsentry commit -m "feat(ext): Chrono24 listing parser w/ ld+json"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -1841,8 +1841,8 @@ git -C C:\omerprojects\watchsentry push
 ### Task 3.3 — API client module in extension
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\extension\src\api\client.ts`
-- Create: `C:\omerprojects\watchsentry\extension\tests\api\client.test.ts`
+- Create: `<repo>\extension\src\api\client.ts`
+- Create: `<repo>\extension\tests\api\client.test.ts`
 
 **Step 1: Failing test**
 
@@ -1901,9 +1901,9 @@ Expected: green.
 **Step 4: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add extension/src/api extension/tests/api
-git -C C:\omerprojects\watchsentry commit -m "feat(ext): API client for /enrich"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add extension/src/api extension/tests/api
+git -C <workspace>\watchsentry commit -m "feat(ext): API client for /enrich"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -1911,9 +1911,9 @@ git -C C:\omerprojects\watchsentry push
 ### Task 3.4 — Badge component + injection
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\extension\src\components\Badge.tsx`
-- Create: `C:\omerprojects\watchsentry\extension\src\components\badge.css`
-- Modify: `C:\omerprojects\watchsentry\extension\src\content\index.tsx`
+- Create: `<repo>\extension\src\components\Badge.tsx`
+- Create: `<repo>\extension\src\components\badge.css`
+- Modify: `<repo>\extension\src\content\index.tsx`
 
 **Step 1: Badge component — src/components/Badge.tsx**
 
@@ -2047,9 +2047,9 @@ User action: in `chrome://extensions`, click "Reload" on WatchSentry. Navigate t
 **Step 5: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add extension/src
-git -C C:\omerprojects\watchsentry commit -m "feat(ext): badge component + content-script injection"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add extension/src
+git -C <workspace>\watchsentry commit -m "feat(ext): badge component + content-script injection"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2069,9 +2069,9 @@ git -C C:\omerprojects\watchsentry push
 ### Task 4.1 — DOM parser for search-results page
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\extension\src\parsers\chrono24-search.ts`
-- Create: `C:\omerprojects\watchsentry\extension\tests\parsers\chrono24-search.test.ts`
-- Create: `C:\omerprojects\watchsentry\extension\tests\fixtures\chrono24-search-rolex-submariner.html` (fresh fixture)
+- Create: `<repo>\extension\src\parsers\chrono24-search.ts`
+- Create: `<repo>\extension\tests\parsers\chrono24-search.test.ts`
+- Create: `<repo>\extension\tests\fixtures\chrono24-search-rolex-submariner.html` (fresh fixture)
 
 **Step 1: User captures search-page fixture**
 
@@ -2157,9 +2157,9 @@ npm test
 Iterate until tests pass. Then commit:
 
 ```powershell
-git -C C:\omerprojects\watchsentry add extension/src/parsers/chrono24-search.ts extension/tests
-git -C C:\omerprojects\watchsentry commit -m "feat(ext): Chrono24 search-results parser"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add extension/src/parsers/chrono24-search.ts extension/tests
+git -C <workspace>\watchsentry commit -m "feat(ext): Chrono24 search-results parser"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2167,8 +2167,8 @@ git -C C:\omerprojects\watchsentry push
 ### Task 4.2 — Compact badge for search-result cards
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\extension\src\components\BadgeCompact.tsx`
-- Modify: `C:\omerprojects\watchsentry\extension\src\content\index.tsx`
+- Create: `<repo>\extension\src\components\BadgeCompact.tsx`
+- Modify: `<repo>\extension\src\content\index.tsx`
 
 **Step 1: BadgeCompact component**
 
@@ -2243,8 +2243,8 @@ User: load `chrono24.com/search/index.htm?query=Submariner`, badges per card sho
 **Step 4: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry commit -am "feat(ext): compact badges on search-results page"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry commit -am "feat(ext): compact badges on search-results page"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2252,8 +2252,8 @@ git -C C:\omerprojects\watchsentry push
 ### Task 4.3 — Settings popup + storage
 
 **Files:**
-- Modify: `C:\omerprojects\watchsentry\extension\src\popup\popup.tsx`
-- Create: `C:\omerprojects\watchsentry\extension\src\storage.ts`
+- Modify: `<repo>\extension\src\popup\popup.tsx`
+- Create: `<repo>\extension\src\storage.ts`
 
 **Step 1: Storage helper**
 
@@ -2343,8 +2343,8 @@ Test that toggling off in popup makes the badge disappear on next page load.
 **Step 5: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry commit -am "feat(ext): settings popup + storage helper + enable/disable"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry commit -am "feat(ext): settings popup + storage helper + enable/disable"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2352,8 +2352,8 @@ git -C C:\omerprojects\watchsentry push
 ### Task 4.4 — Anonymous user ID + per-user daily-cap counter
 
 **Files:**
-- Modify: `C:\omerprojects\watchsentry\extension\src\content\index.tsx`
-- Modify: `C:\omerprojects\watchsentry\workers\src\enrich.ts`
+- Modify: `<repo>\extension\src\content\index.tsx`
+- Modify: `<repo>\workers\src\enrich.ts`
 
 **Step 1: Send anonymousId on enrich**
 
@@ -2407,8 +2407,8 @@ Build ext; in Chrome reload; visit 5+ listings on Chrono24; check `wrangler d1 e
 **Step 4: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry commit -am "feat(workers,ext): anonymous user ID + 50/day soft cap"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry commit -am "feat(workers,ext): anonymous user ID + 50/day soft cap"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2431,11 +2431,11 @@ git -C C:\omerprojects\watchsentry push
 ### Task 5.1 — Cloudflare Pages static site
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\landing\index.html`
-- Create: `C:\omerprojects\watchsentry\landing\privacy.html`
-- Create: `C:\omerprojects\watchsentry\landing\terms.html`
-- Create: `C:\omerprojects\watchsentry\landing\styles.css`
-- Create: `C:\omerprojects\watchsentry\landing\_routes.json` (Cloudflare Pages config)
+- Create: `<repo>\landing\index.html`
+- Create: `<repo>\landing\privacy.html`
+- Create: `<repo>\landing\terms.html`
+- Create: `<repo>\landing\styles.css`
+- Create: `<repo>\landing\_routes.json` (Cloudflare Pages config)
 
 **Step 1: index.html — single-page landing**
 
@@ -2562,7 +2562,7 @@ button { padding: 8px 16px; background: #1f6feb; color: white; border: none; bor
 **Step 5: Deploy to Cloudflare Pages**
 
 ```powershell
-cd C:\omerprojects\watchsentry\landing
+cd <repo>\landing
 wrangler pages deploy . --project-name=watchsentry-landing
 ```
 
@@ -2573,9 +2573,9 @@ Note the preview URL e.g. `https://watchsentry-landing.pages.dev`.
 **Step 6: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add landing
-git -C C:\omerprojects\watchsentry commit -m "feat(landing): static site with privacy + terms"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add landing
+git -C <workspace>\watchsentry commit -m "feat(landing): static site with privacy + terms"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2583,7 +2583,7 @@ git -C C:\omerprojects\watchsentry push
 ### Task 5.2 — Mailing-list subscribe handler (small Workers function in /landing)
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\landing\functions\api\subscribe.ts`
+- Create: `<repo>\landing\functions\api\subscribe.ts`
 
 This uses Pages Functions (Workers within Pages projects) so the landing site has the subscribe endpoint built-in without a separate Worker.
 
@@ -2626,9 +2626,9 @@ Smoke: visit deployed URL, submit a test email, check D1 audit_log for entry.
 **Step 4: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add landing/functions
-git -C C:\omerprojects\watchsentry commit -m "feat(landing): subscribe endpoint via Pages Functions"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add landing/functions
+git -C <workspace>\watchsentry commit -m "feat(landing): subscribe endpoint via Pages Functions"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2636,9 +2636,9 @@ git -C C:\omerprojects\watchsentry push
 ### Task 5.3 — CWS listing assets (copy + screenshots + demo video)
 
 **Files:**
-- Create: `C:\omerprojects\watchsentry\cws-submission\listing-copy.md`
-- Capture: `C:\omerprojects\watchsentry\cws-submission\screenshots\` (5 PNGs, 1280×800)
-- Capture: `C:\omerprojects\watchsentry\cws-submission\demo.mp4` (~30 sec)
+- Create: `<repo>\cws-submission\listing-copy.md`
+- Capture: `<repo>\cws-submission\screenshots\` (5 PNGs, 1280×800)
+- Capture: `<repo>\cws-submission\demo.mp4` (~30 sec)
 
 **Step 1: listing-copy.md**
 
@@ -2696,9 +2696,9 @@ Screen-record: navigate to chrono24.com → click into a Rolex Submariner listin
 **Step 4: Commit assets**
 
 ```powershell
-git -C C:\omerprojects\watchsentry add cws-submission
-git -C C:\omerprojects\watchsentry commit -m "docs(cws): listing copy + screenshots + demo video"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry add cws-submission
+git -C <workspace>\watchsentry commit -m "docs(cws): listing copy + screenshots + demo video"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2708,7 +2708,7 @@ git -C C:\omerprojects\watchsentry push
 This is the mandatory anonymity gate before any public artifact ships.
 
 **Files:**
-- Modify: `C:\omerprojects\watchsentry\docs\anonymity-audit.md` (mark all items confirmed)
+- Modify: `<repo>\docs\anonymity-audit.md` (mark all items confirmed)
 
 **Step 1: Walk every public surface and verify brand-only**
 
@@ -2733,8 +2733,8 @@ In `docs/anonymity-audit.md`, check off each row. Note any "audit debt" (tempora
 **Step 3: Commit**
 
 ```powershell
-git -C C:\omerprojects\watchsentry commit -am "audit: anonymity checkpoint pre-CWS-submission"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry commit -am "audit: anonymity checkpoint pre-CWS-submission"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2773,14 +2773,14 @@ git -C C:\omerprojects\watchsentry push
 **Step 1: Build production**
 
 ```powershell
-cd C:\omerprojects\watchsentry\extension
+cd <repo>\extension
 npm run build
 ```
 
 **Step 2: Zip the dist folder**
 
 ```powershell
-Compress-Archive -Path C:\omerprojects\watchsentry\extension\dist\* -DestinationPath C:\omerprojects\watchsentry\cws-submission\watchsentry-v0.1.0.zip -Force
+Compress-Archive -Path <repo>\extension\dist\* -DestinationPath <repo>\cws-submission\watchsentry-v0.1.0.zip -Force
 ```
 
 **Step 3: Upload via Web Store Developer Dashboard**
@@ -2839,8 +2839,8 @@ Send a test email to `support@watchsentry.app`; verify it arrives at user's inbo
 The `support@` address is now public. The DESTINATION is private (Cloudflare-only mapping). Document this in `docs/anonymity-audit.md` as a resolved item: "audit debt resolved: CWS support email is now `support@watchsentry.app` backed by Cloudflare Email Routing."
 
 ```powershell
-git -C C:\omerprojects\watchsentry commit -am "audit: support@ email routing live; CWS submission updated"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry commit -am "audit: support@ email routing live; CWS submission updated"
+git -C <workspace>\watchsentry push
 ```
 
 ---
@@ -2903,8 +2903,8 @@ Phase 0 kill is at 120 days, so this is informational only. Note install count +
 ### Task 7.3 — Update design doc + session log with launch state
 
 **Files:**
-- Modify: `C:\omerprojects\passive-income-empire\sessions\2026-05-18-t4a-niche-design.md` (append launch addendum)
-- Modify: `C:\omerprojects\watchsentry\progress\session-log.md` (capture launch session)
+- Modify: `<workspace>\passive-income-empire\sessions\2026-05-18-t4a-niche-design.md` (append launch addendum)
+- Modify: `<repo>\progress\session-log.md` (capture launch session)
 
 Add a "Launch Addendum" section to the session log:
 
@@ -2924,8 +2924,8 @@ Add a "Launch Addendum" section to the session log:
 Commit:
 
 ```powershell
-git -C C:\omerprojects\watchsentry commit -am "docs: Phase 0 launch addendum"
-git -C C:\omerprojects\watchsentry push
+git -C <workspace>\watchsentry commit -am "docs: Phase 0 launch addendum"
+git -C <workspace>\watchsentry push
 ```
 
 ---

@@ -17,8 +17,8 @@ Append one entry per work session. Format per `feedback_working_style.md` in use
 - Kill metrics: loosened to 120-day Phase 0 window, 90-day Phase 1.
 
 **Done:**
-- Design doc written: `C:\omerprojects\passive-income-empire\docs\plans\2026-05-18-t4a-niche-design.md`.
-- Session 3 log written: `C:\omerprojects\passive-income-empire\sessions\2026-05-18-t4a-niche-design.md`.
+- Design doc written: `<workspace>\passive-income-empire\docs\plans\2026-05-18-t4a-niche-design.md`.
+- Session 3 log written: `<workspace>\passive-income-empire\sessions\2026-05-18-t4a-niche-design.md`.
 - Phase 0 implementation plan written: `docs/plans/2026-05-18-phase0-implementation-plan.md`.
 - Memory updated: anonymity rule, Cloudflare preference, Claude-in-Chrome MCP availability.
 - Foundational repo files: README, LICENSE, .gitignore, .gitattributes, anonymity-audit.md, .github/workflows/ci.yml, this log.
@@ -48,7 +48,7 @@ Append one entry per work session. Format per `feedback_working_style.md` in use
 - Skills installed FULL into `~/.claude/skills/`:
   - `chrome-extension/` (samber/cc-skills, MIT) — SKILL.md + 13 reference files
   - `cloudflare/` (cloudflare/skills, Apache-2.0) — SKILL.md + ~280 reference files across 58 services (workers, d1, kv, wrangler, pages, cron-triggers, queues, browser-rendering, secrets-store, etc.). Self-contained; no upstream git relation.
-  - Staging folders at `C:\omerprojects\chrome extension\` and `C:\omerprojects\cloudflare\` cleaned up.
+  - Staging folders at `<workspace>\chrome extension\` and `<workspace>\cloudflare\` cleaned up.
 - Task 1.7 — `wrangler login` complete. Cloudflare account `kungfurry` (`dd48515dc7c2b5e482780a4ed125c0dc`) authorized.
 - Task 1.8 — Created:
   - D1 database `watchsentry-db` (ID `0e266a44-1c3b-4c81-8970-df24b5c42dcb`, region EEUR).
@@ -140,7 +140,7 @@ This section supersedes any earlier "Next session entry point" content above.
 1. **eBay account activation** (~24h ETA from registration).
    - When eBay activates: go to https://developer.ebay.com → My Account → Application Keys → **Production** → Create keyset.
    - Capture **App ID** (Client ID) and **Cert ID** (Client Secret).
-   - From `C:\omerprojects\watchsentry\workers\`:
+   - From `<repo>\workers\`:
      ```powershell
      wrangler secret put EBAY_APP_ID
      wrangler secret put EBAY_CERT_ID
@@ -211,7 +211,7 @@ This section supersedes any earlier "Next session entry point" content above.
 - Extension files: `0 hits` for PII patterns (omer/cil/hotmail/claude/anthropic/gravatar)
 - Workers source: `0 hits`
 - Git author/committer: `WatchSentry Bot` + GitHub noreply — verified
-- New audit-debt entry logged: `C:\omerprojects\` workspace path appears in committed plan + progress + audit docs (pre-existing from Session 0). Action required before repo visibility change.
+- New audit-debt entry logged: `<workspace>\` workspace path appears in committed plan + progress + audit docs (pre-existing from Session 0). Action required before repo visibility change.
 
 ### Commits pushed to origin/main (6 total this session)
 
@@ -266,7 +266,7 @@ User confirmed at end of Session 1: **eBay Developer App STILL not activated.** 
 
 Elapsed time since registration submission (Session 0, 2026-05-18 evening): **>24 hours**, exceeding vendor's stated ETA.
 
-Action recorded: **state preserved as-is; no nudge of eBay support attempted from Claude side.** User to decide if/when to escalate. New feedback memory `feedback_parallel_around_blockers.md` captures the pattern; portfolio-level Session 4 log `C:\omerprojects\passive-income-empire\sessions\2026-05-19-session-4-phase0-nonlinear.md` documents the non-linear progress map for cross-session continuity.
+Action recorded: **state preserved as-is; no nudge of eBay support attempted from Claude side.** User to decide if/when to escalate. New feedback memory `feedback_parallel_around_blockers.md` captures the pattern; portfolio-level Session 4 log `<workspace>\passive-income-empire\sessions\2026-05-19-session-4-phase0-nonlinear.md` documents the non-linear progress map for cross-session continuity.
 
 If eBay is still blocked at start of Session 2, default action per Section 9 of the portfolio Session 4 log is autonomous execution of Tasks 4.1 / 4.3 / 4.4-client / 5.1-source / 5.3-copy / privacy+terms drafts.
 
@@ -601,18 +601,18 @@ npx wrangler kv key delete --namespace-id=45d2b00e2fd545c38df468b15b8ec097 --rem
 
 ```powershell
 # Workers
-cd C:\omerprojects\watchsentry\workers
+cd <repo>\workers
 npm run typecheck && npm test && npm run lint
 
 # Extension
-cd C:\omerprojects\watchsentry\extension
+cd <repo>\extension
 npm run typecheck && npm test && npm run lint && npm run build
 
 # Deployed worker
 curl https://watchsentry-api.txrz.workers.dev/health
 
 # Git state
-cd C:\omerprojects\watchsentry
+cd <workspace>\watchsentry
 git status --short
 git log --oneline -10
 ```
