@@ -22,6 +22,7 @@ export type EnrichResponse = {
 };
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
+const DAILY_ENRICHMENT_CAP = 50;
 
 export function enrichmentCacheKey(args: {
   brand: string;
@@ -31,7 +32,42 @@ export function enrichmentCacheKey(args: {
   return `enrich:${args.brand}:${args.reference}:${args.condition}`;
 }
 
+export async function touchUser(
+  db: D1Database,
+  anonymousId: string,
+  today: string = new Date().toISOString().slice(0, 10),
+): Promise<{ count: number; capped: boolean }> {
+  const existing = await db
+    .prepare("SELECT enrichment_count_today, counter_day FROM users WHERE anonymous_id = ?")
+    .bind(anonymousId)
+    .first<{ enrichment_count_today: number; counter_day: string }>();
+
+  if (!existing) {
+    await db
+      .prepare(
+        "INSERT INTO users (anonymous_id, enrichment_count_today, counter_day) VALUES (?, ?, ?)",
+      )
+      .bind(anonymousId, 1, today)
+      .run();
+    return { count: 1, capped: false };
+  }
+
+  const count = existing.counter_day === today ? existing.enrichment_count_today + 1 : 1;
+  await db
+    .prepare(
+      "UPDATE users SET enrichment_count_today = ?, counter_day = ?, last_seen_at = datetime('now') WHERE anonymous_id = ?",
+    )
+    .bind(count, today, anonymousId)
+    .run();
+  return { count, capped: count > DAILY_ENRICHMENT_CAP };
+}
+
 export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichResponse> {
+  if (req.anonymousId) {
+    const u = await touchUser(env.DB, req.anonymousId);
+    if (u.capped) return { status: "no_data" };
+  }
+
   const cacheKey = enrichmentCacheKey({
     brand: req.brand,
     reference: req.reference,

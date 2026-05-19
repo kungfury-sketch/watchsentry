@@ -34,6 +34,7 @@ async function run() {
         reference: parsed.referenceNumber,
         condition: parsed.conditionTier,
         listedPriceUsd: parsed.listedPriceUsd ?? undefined,
+        anonymousId: settings.anonymousId,
       },
       { apiBase: API_BASE },
     );
