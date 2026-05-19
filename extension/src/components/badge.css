@@ -1,50 +1,96 @@
+/* WatchSentry badges
+   Tuned to work on both Chrono24's light and dark themes. Uses translucent backgrounds
+   layered over the host color, with mid-saturation accent colors that read on both. */
+
 .ws-badge {
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 13px;
-  line-height: 1.4;
-  padding: 10px 12px;
-  margin: 12px 0;
-  border-radius: 8px;
-  border: 1px solid #d0d7de;
-  background: #f6f8fa;
-  color: #1f2328;
-  max-width: 380px;
+  line-height: 1.5;
+  padding: 14px 16px;
+  margin: 14px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(127, 127, 127, 0.18);
+  background: rgba(127, 127, 127, 0.04);
+  color: inherit;
+  max-width: 420px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
-.ws-good {
-  border-color: #2da44e;
-  background: #dafbe1;
+
+.ws-badge.ws-good {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.08);
 }
-.ws-bad {
-  border-color: #cf222e;
-  background: #ffebe9;
+.ws-badge.ws-bad {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
 }
-.ws-neutral {
-  border-color: #d0d7de;
-  background: #f6f8fa;
+.ws-badge.ws-neutral {
+  border-color: rgba(127, 127, 127, 0.22);
+  background: rgba(127, 127, 127, 0.05);
 }
-.ws-loading {
-  color: #6e7781;
+.ws-badge.ws-loading {
+  opacity: 0.65;
 }
+
 .ws-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  padding: 2px 0;
+  align-items: baseline;
+  gap: 16px;
+  padding: 3px 0;
+}
+.ws-row strong {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
 }
 .ws-label {
-  color: #6e7781;
+  color: rgba(127, 127, 127, 0.95);
+  font-size: 12px;
+  font-weight: 400;
 }
 .ws-foot {
-  color: #6e7781;
+  color: rgba(127, 127, 127, 0.85);
   font-size: 11px;
-  margin-top: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(127, 127, 127, 0.15);
+  letter-spacing: 0.01em;
 }
+
+/* Compact pill badge for search-results cards */
 .ws-badge-compact {
-  display: inline-block;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 11px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  margin-top: 4px;
-  border: 1px solid #d0d7de;
+  font-weight: 600;
+  line-height: 1;
+  padding: 5px 10px;
+  border-radius: 999px;
+  margin-top: 6px;
+  letter-spacing: 0.02em;
+  background: rgba(127, 127, 127, 0.12);
+  color: rgba(127, 127, 127, 1);
+}
+.ws-badge-compact::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.ws-badge-compact.ws-good {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.14);
+}
+.ws-badge-compact.ws-bad {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.14);
+}
+.ws-badge-compact.ws-neutral {
+  color: #9ca3af;
+  background: rgba(156, 163, 175, 0.14);
 }

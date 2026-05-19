@@ -10,6 +10,22 @@ import { type Settings, getSettings } from "../storage";
 const API_BASE = "https://watchsentry-api.txrz.workers.dev";
 const MAX_CARDS_PER_PAGE = 50;
 
+// Set DEBUG=true + rebuild to surface [WatchSentry] logs in the page console.
+// Useful when Chrono24 changes their DOM and badges silently stop rendering.
+const DEBUG = false;
+
+const log = {
+  info: (msg: string, ...args: unknown[]) => {
+    if (DEBUG) console.info(`[WatchSentry] ${msg}`, ...args);
+  },
+  warn: (msg: string, ...args: unknown[]) => {
+    if (DEBUG) console.warn(`[WatchSentry] ${msg}`, ...args);
+  },
+  error: (msg: string, ...args: unknown[]) => {
+    if (DEBUG) console.error(`[WatchSentry] ${msg}`, ...args);
+  },
+};
+
 function injectListingMountPoint(): HTMLElement {
   const mount = document.createElement("div");
   mount.id = "watchsentry-mount";
@@ -27,10 +43,10 @@ function injectListingMountPoint(): HTMLElement {
 async function runListing(settings: Settings) {
   const parsed = parseChrono24Listing(document);
   if (!parsed) {
-    console.warn("[WatchSentry] parser returned null on listing page");
+    log.warn("parser returned null on listing page");
     return;
   }
-  console.info("[WatchSentry] parsed", parsed);
+  log.info("parsed", parsed);
 
   const mount = injectListingMountPoint();
   render(<Badge status="loading" />, mount);
@@ -43,9 +59,9 @@ async function runListing(settings: Settings) {
       listedPriceUsd: parsed.listedPriceUsd ?? undefined,
       anonymousId: settings.anonymousId,
     };
-    console.info("[WatchSentry] request body", requestBody);
+    log.info("request body", requestBody);
     const enriched = await enrichListing(requestBody, { apiBase: API_BASE });
-    console.info("[WatchSentry] response", enriched);
+    log.info("response", enriched);
     render(
       <Badge
         status={enriched.status}
@@ -57,15 +73,23 @@ async function runListing(settings: Settings) {
       mount,
     );
   } catch (err) {
-    console.error("[WatchSentry] enrich failed", err);
+    log.error("enrich failed", err);
     render(<Badge status="no_data" />, mount);
   }
 }
 
+const SEARCH_CONCURRENCY = 6;
+
 async function runSearch(settings: Settings) {
-  const cards = parseChrono24Search(document).slice(0, MAX_CARDS_PER_PAGE);
-  for (const card of cards) {
-    if (!card.brand || !card.referenceNumber) continue;
+  const cards = parseChrono24Search(document)
+    .slice(0, MAX_CARDS_PER_PAGE)
+    .filter((c) => c.brand && c.referenceNumber);
+
+  await processWithConcurrency(cards, SEARCH_CONCURRENCY, async (card) => {
+    if (!card.brand || !card.referenceNumber) return;
+    // Idempotency: skip if this card already has a badge from a prior pass (defense against
+    // Chrono24's SPA re-rendering the cards while our async work was in flight).
+    if (card.listingElement.querySelector(".ws-badge-compact")) return;
     try {
       const enriched = await enrichListing(
         {
@@ -86,7 +110,23 @@ async function runSearch(settings: Settings) {
     } catch {
       // skip single-card failures silently
     }
-  }
+  });
+}
+
+async function processWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<void>,
+): Promise<void> {
+  let index = 0;
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const i = index++;
+      if (i >= items.length) return;
+      await worker(items[i] as T);
+    }
+  });
+  await Promise.all(runners);
 }
 
 async function main() {
