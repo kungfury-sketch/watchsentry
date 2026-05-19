@@ -540,20 +540,71 @@ Still 28/30 numerically. What CHANGED: badges actually work now (previously sile
 
 ---
 
-## Session 6 entry-point checklist (READ THIS FIRST NEXT SESSION)
+## Session 6 — Phase 0 polish + cleanup + comprehensive audit (2026-05-20, ~3 hrs)
+
+**Hours:** ~3 (post-midnight continuation of the 2026-05-19 session)
+**Mode:** Multi-track autonomous execution — UX polish, doc hygiene, security audit
+
+### Context entering session
+Session 5 closed with badges verified live but two known issues: duplicate badges per card (caused by an OR-fallback in the card selector matching responsive wrapper duplicates) and a slow sequential `/enrich` loop (~60s for 60 cards). User OK'd a "B then C" plan: parallelize + cap tuning, then log gating + cleanups. After that, user asked for a comprehensive audit.
+
+### What shipped (9 commits)
+
+1. **`3c66433` feat(workers): cap-after-cache + bump daily cap to 200** — moved touchUser cap check after the KV cache lookup; cache hits free; bumped cap from 50 to 200. touch-user tests updated. **Deployed** as `31280a03`.
+2. **`ba36c80` fix(ext/parser): robust reference extraction + strict card selector** — third-tier ref extraction (5-7 digit + optional 1-4 letter sequence) catches refs in messy seller text. Dropped `.wt-listing-item` OR-fallback that was matching responsive duplicates (kills the duplicate-badge bug).
+3. **`f0c9fad` feat(ext/ui): parallelize search /enrich, gate logs, polish badges** — concurrency-6 fan-out (~60s → ~10s cold), idempotency guard, `[WatchSentry]` logs gated behind `const DEBUG = false`, badge visual refresh (pill shape + dot indicator + theme-adaptive colors).
+4. **`9d08541` docs(progress): session 5 closeout** — replaced placeholder entry-point checklist with actual closeout content.
+5. **`20699f8` docs(cws): Phase 0 listing copy, screenshot plan, demo shot list (Task 5.3)** — `cws/listing-copy.md` + `cws/screenshot-plan.md` + `cws/demo-shotlist.md`.
+6. **`56a916f` audit: anonymity re-checkpoint 2026-05-20** — re-ran the standing checklist post-Session-5. Status GREEN.
+7. **`7940fa7` audit: strip operator workspace path from committed docs** — 174 substitutions (`C:\omerprojects\watchsentry\` → `<repo>\`, `C:\omerprojects\` → `<workspace>\`). UTF-8 preserved.
+8. **`026b1c6` docs: close omerprojects audit-debt + document listing-fixture rationale** — strike-through RESOLVED marker; added doc block to listing fixture explaining structural-synthetic-vs-real-page-capture.
+9. **`e7a49b1` audit: comprehensive end-of-day audit 2026-05-20** — `docs/audits/2026-05-20-comprehensive.md`, 12 sections. Verdict: **GREEN for CWS submission.**
+
+### Tests + lint at session close
+
+- Workers: **31/31** tests, lint + typecheck clean
+- Extension: **18/18** tests (added one search-parser test for messy-ref-text), lint + typecheck clean
+
+### Deploys this session (1)
+
+| Version | Notes |
+|---|---|
+| `31280a03` | **CURRENT LIVE** — cap-after-cache + cap 200/day |
+
+### Audit highlights (full report in `docs/audits/2026-05-20-comprehensive.md`)
+
+- 0 PII leaks across tracked files
+- All 13 commits today authored as `WatchSentry Bot <noreply>`
+- 17 npm-audit findings (workers 9 moderate, extension 6 moderate + 2 high) — ALL in dev dependencies; ZERO production runtime impact
+- D1: 50 refs / 6,626 sold_comps / 14 users / 1 audit_log row; KV: 4 cached enrich responses
+- Manifest minimal + valid; host-permission pinned
+
+### Phase 0 progress: 28/30 unchanged numerically; AUTONOMOUS LANE COMPLETE
+
+All remaining work is user-driven (5 screenshots / branded icons / paste copy + submit) or Phase 1 polish (custom domain, dev-dep upgrades).
+
+### Hours
+
+~3 hrs this session. Phase 0 cumulative: ~19.5 hrs of 40–60 hr budget.
+
+---
+
+## Session 7 entry-point checklist (READ THIS FIRST NEXT SESSION)
 
 1. Auto-load `MEMORY.md` (harness does).
-2. Read the "Session 5" section above.
-3. **Ask user which lane to pursue:**
-   - **Phase 0 finish:** Task 5.3 listing copy draft (autonomous markdown for CWS)
-   - **Phase 1 polish:** Task #6 parallelize search /enrich + tune 50/day cap, Task #7 gate diagnostic logs
-   - **CWS submission prep:** icon assets, real screenshots, copy (user-driven)
-   - **T5b** dropcatch background bet (not started)
-4. Health-check live worker (version `afc8d1c6`):
+2. Read the "Session 6" section above.
+3. Read `docs/audits/2026-05-20-comprehensive.md` for the green-light state.
+4. **Ask user which lane to pursue:**
+   - **CWS submission walk-through** — capture 5 screenshots, optionally record demo video, replace placeholder icons (or use `canvas-design` skill to draft them), paste `cws/listing-copy.md` into CWS dashboard, submit, wait for review. ~1-2 hrs of user time.
+   - **Icon design via canvas-design skill** — autonomous if user provides brand color/style hints; produces 16/48/128 PNGs.
+   - **Custom-domain wiring** — `api.watchsentry.app` Worker route + flip `workers_dev = false`. Mostly DNS in CF dashboard.
+   - **T5b dropcatch background bet** — separate folder under `<workspace>/`. Not started.
+   - **Dev-dep cleanup** — bump vitest/wrangler/@crxjs major versions to clear the 17 npm-audit findings.
+5. Health-check live worker (version `31280a03`):
    ```
    curl https://watchsentry-api.txrz.workers.dev/health
    ```
-5. **DO NOT** attempt autonomously without asking first (per `feedback_no_cost_without_asking.md`):
+6. **DO NOT** attempt autonomously without asking first (per `feedback_no_cost_without_asking.md`):
    - `wrangler deploy` / `wrangler pages deploy`
    - CWS submission
    - New accounts / paid features / subscriptions
