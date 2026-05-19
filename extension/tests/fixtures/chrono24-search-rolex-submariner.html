@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Rolex Submariner — Chrono24 (synthetic fixture)</title>
+</head>
+<body>
+<!--
+  SYNTHETIC fixture for Task 4.1 parser tests.
+  Generated from selector contract in the implementation plan:
+    - article.article-item for each card
+    - .article-item-brand for brand text
+    - "Ref. XXXX" text within the card for reference
+    - .price for listed price
+  Phase 1 launch blocker: re-capture a real Chrono24 search-results page and re-verify the parser
+  against the real DOM. See extension/tests/fixtures/README.md.
+-->
+
+<main>
+  <article class="article-item" data-listing-id="L1">
+    <span class="article-item-brand">Rolex</span>
+    <p class="article-item-subtitle">Submariner Date — Ref. 126610LN</p>
+    <span class="price">$13,499</span>
+  </article>
+
+  <article class="article-item" data-listing-id="L2">
+    <span class="article-item-brand">Rolex</span>
+    <p class="article-item-subtitle">Submariner No-Date — Ref. 124060</p>
+    <span class="price">$10,250</span>
+  </article>
+
+  <article class="article-item" data-listing-id="L3">
+    <span class="article-item-brand">Rolex</span>
+    <p class="article-item-subtitle">Submariner Hulk — Ref. 116610LV</p>
+    <span class="price">$18,000</span>
+  </article>
+
+  <article class="article-item" data-listing-id="L4">
+    <span class="article-item-brand">Rolex</span>
+    <p class="article-item-subtitle">No reference quoted in this card</p>
+    <span class="price">€9,500</span>
+  </article>
+</main>
+
+</body>
+</html>
