@@ -2,6 +2,7 @@ import { render } from "preact";
 import { enrichListing } from "../api/client";
 import { Badge } from "../components/Badge";
 import { parseChrono24Listing } from "../parsers/chrono24-listing";
+import { getSettings } from "../storage";
 
 // Cut over to api.watchsentry.app once the custom Worker route is wired (Week 5).
 const API_BASE = "https://watchsentry-api.txrz.workers.dev";
@@ -17,6 +18,9 @@ function injectMountPoint(): HTMLElement {
 }
 
 async function run() {
+  const settings = await getSettings();
+  if (!settings.enabled) return;
+
   const parsed = parseChrono24Listing(document);
   if (!parsed) return;
 
