@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { runDailyRefresh } from "./cron";
 
 export type Env = {
   DB: D1Database;
@@ -13,7 +14,7 @@ app.get("/health", (c) => c.json({ ok: true, name: "watchsentry-api" }));
 
 export default {
   fetch: app.fetch,
-  scheduled: async (_event: ScheduledEvent, _env: Env, _ctx: ExecutionContext) => {
-    // Cron entry — wired to runDailyRefresh in Task 2.7
+  scheduled: async (_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) => {
+    await runDailyRefresh(env);
   },
 };
