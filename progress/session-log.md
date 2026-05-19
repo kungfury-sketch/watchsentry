@@ -476,41 +476,88 @@ User has the test instructions; was about to install the unpacked extension from
 
 ---
 
-## Session 5 entry-point checklist (READ THIS FIRST NEXT SESSION)
+## Session 5 — Real-DOM debug pass + CORS deploy (2026-05-19, ~2 hrs)
+
+**Hours:** ~2 (user-driven debug — user loaded extension, found 3 root causes via Claude in Chrome MCP, fixed + deployed)
+**Mode:** Systematic debugging via in-browser MCP + verification-before-completion
+
+### Context entering session
+- User loaded the extension unpacked in Chrome (per Session 4 closeout plan).
+- First report: "I didn't see any badges."
+- Two screenshots: chrome://extensions card + "URL pattern 'https://watchsentry-api.*.workers.dev/*' is malformed" warning.
+
+### Root causes found (all three required real-DOM access)
+
+**1. Malformed `host_permissions` URL pattern.** Chrome MV3 only allows `*` as the leftmost label of a host pattern. `watchsentry-api.*.workers.dev` had `*` as a middle component → rejected. Fixed by pinning to exact subdomain `watchsentry-api.txrz.workers.dev/*`.
+
+**2. Chrono24 redesigned both pages since synthetic fixtures were built.** After user granted Claude in Chrome MCP scope for `chrono24.com`, drove real Chrome session + probed live DOM:
+- Search cards: `article.article-item` → `.wt-listing-item.js-listing-item.listing-item` (full rewrite — utility-class soup, no semantic names)
+- Listing mount anchor: `.js-detail-page-price-section` → `.detail-page-price`
+- Listing JSON-LD: Product now nested inside top-level `@graph` array (parser was only checking top-level `@type`)
+
+Rewrote `parseChrono24Search` with new selectors + compound-brand list. Added `findProduct()` recursion in `parseChrono24Listing`. Updated synthetic search fixture to match live markup. Added `@graph`-wrapped test case.
+
+**3. No CORS on worker → MV3 preflight failed.** After parsers worked, badges still showed no_data fallback. Diagnostic `console.error` in content/index.tsx surfaced `TypeError: Failed to fetch`. Network state showed OPTIONS → 404 (no OPTIONS handler).
+
+**Key learning:** MV3 content scripts follow the host page's CORS policy regardless of `host_permissions`. Added `hono/cors` middleware (origin `*`, GET/POST/OPTIONS, Content-Type, 24h preflight cache) + 2 regression tests.
+
+### Verification — end-to-end via Claude in Chrome MCP
+
+**Listing detail** (`/rolex/rolex-submariner--id45858844.htm`):
+- OPTIONS preflight 204 with CORS headers ✓
+- POST /enrich → 200 ✓
+- Badge: `Fair value $13,499 / Listing vs fair -14.1% / based on 200 sold-comps · 90d window` (`ws-good` class) ✓
+- Console clean: `[WatchSentry] parsed → request body → response` (info-level)
+
+**Search results** (`?query=rolex+submariner+124060`):
+- 60 cards detected ✓
+- Compact badges rendering serially (~1/sec — sequential await loop; Phase-1 parallelize)
+- Sample: `-14.1% vs fair` (ws-good), `-3.7% vs fair` (ws-neutral), `-11.8% vs fair` (ws-good)
+- All /enrich POSTs 200 ✓
+
+### Deploys this session (1)
+| Version | Notes |
+|---|---|
+| `afc8d1c6` | **CURRENT LIVE** — worker with CORS middleware |
+
+### Tests
+- Workers: 29/29 → **31/31** (added 2 CORS tests)
+- Extension: 16/16 → **17/17** (added @graph-wrapped Product test)
+
+### Commits pushed
+| SHA | Subject |
+|---|---|
+| `5b06886` | fix(ext): retarget parsers + manifest to live Chrono24 DOM |
+| `43fba3b` | fix(ext/parser): walk @graph for nested Product schema in listing pages |
+| `dfb048b` | feat(workers): CORS middleware for cross-origin extension calls |
+
+### New memories saved
+- `feedback_skill_discipline.md` (from `/superpowers:using-superpowers` at session start)
+- `feedback_ask_before_websites.md` (browser MCP approval is domain-scope, no popup gates)
+
+### Phase 0 progress unchanged: 28/30
+Still 28/30 numerically. What CHANGED: badges actually work now (previously silent failures on real DOM + CORS). Effectively un-blocked the existing 28/30.
+
+---
+
+## Session 6 entry-point checklist (READ THIS FIRST NEXT SESSION)
 
 1. Auto-load `MEMORY.md` (harness does).
-2. Read the "Session 4" section above (this file).
-3. **FIRST QUESTION to the user:** *"How did the local testing go?"* — capture:
-   - Did the extension load in Chrome without errors?
-   - Did the popup show + the toggle work?
-   - Did badges render on actual Chrono24 listings?
-   - Any errors in the page console or extension service-worker console?
-   - Sample fair-value numbers + deltas observed (sanity-check data quality)
-   - Did the search-results compact badges appear too?
-4. Health-check live: `curl https://watchsentry-api.txrz.workers.dev/health` → expect `{"ok":true,"name":"watchsentry-api"}`.
-5. Confirm overnight cron fired:
-   ```powershell
-   cd C:\omerprojects\watchsentry\workers
-   npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT event_type, payload_json, created_at FROM audit_log WHERE event_type LIKE 'cron%' ORDER BY id DESC LIMIT 5;"
+2. Read the "Session 5" section above.
+3. **Ask user which lane to pursue:**
+   - **Phase 0 finish:** Task 5.3 listing copy draft (autonomous markdown for CWS)
+   - **Phase 1 polish:** Task #6 parallelize search /enrich + tune 50/day cap, Task #7 gate diagnostic logs
+   - **CWS submission prep:** icon assets, real screenshots, copy (user-driven)
+   - **T5b** dropcatch background bet (not started)
+4. Health-check live worker (version `afc8d1c6`):
    ```
-   Expect ≥2 rows: manual seed (10:50 UTC 2026-05-19) + scheduled run (04:00 UTC 2026-05-20). If only 1 → cron didn't fire, investigate.
-6. Check user's real anon-ID landed in D1 `users`:
-   ```powershell
-   npx wrangler d1 execute watchsentry-db --remote --json --command="SELECT COUNT(*) AS n, MAX(counter_day) AS latest FROM users;"
+   curl https://watchsentry-api.txrz.workers.dev/health
    ```
-   Should show count ≥ 2 (smoke UUIDs + user's real anon-ID) if user actually loaded the extension on a Chrono24 listing.
-7. Check what got cached during user testing:
-   ```powershell
-   npx wrangler kv key list --namespace-id=45d2b00e2fd545c38df468b15b8ec097 --remote
-   ```
-   Each `enrich:Brand:Ref:Condition` entry is one (brand, ref, condition) tuple the user hit.
-8. **If testing went well:** propose moving to Task 5.3 listing copy draft (autonomous markdown — no deploy needed).
-9. **If testing revealed bugs:** triage them first. Likely candidates: parser doesn't match real Chrono24 DOM (selectors out of date), mount-point selector misses, or extension permissions issue (host_permissions wildcard pattern).
-10. **DO NOT** attempt autonomously without asking first (per `feedback_no_cost_without_asking.md`):
-    - Any `wrangler deploy` / `wrangler pages deploy`
-    - CWS submission
-    - New accounts / paid features / subscriptions
-    - Custom domain wiring (api.watchsentry.app)
+5. **DO NOT** attempt autonomously without asking first (per `feedback_no_cost_without_asking.md`):
+   - `wrangler deploy` / `wrangler pages deploy`
+   - CWS submission
+   - New accounts / paid features / subscriptions
+   - Custom domain wiring (`api.watchsentry.app`)
 
 ### Useful one-liners (always remember `--remote`!)
 
