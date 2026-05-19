@@ -19,6 +19,8 @@ export type EnrichResponse = {
   fairValue?: FairValue;
   delta?: { absoluteUsd: number; percent: number };
   reference?: { brand: string; model: string; displayName: string };
+  tier?: ConditionTier;
+  tierFallback?: boolean;
 };
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
@@ -30,6 +32,26 @@ export function enrichmentCacheKey(args: {
   condition: ConditionTier;
 }): string {
   return `enrich:${args.brand}:${args.reference}:${args.condition}`;
+}
+
+export async function getCompsWithFallback(
+  db: D1Database,
+  referenceId: number,
+  requested: ConditionTier,
+): Promise<{
+  comps: Awaited<ReturnType<typeof getFairValueInputsFor>>;
+  actualTier: ConditionTier;
+  fallbackUsed: boolean;
+}> {
+  const primary = await getFairValueInputsFor(db, referenceId, requested);
+  if (primary.length > 0) {
+    return { comps: primary, actualTier: requested, fallbackUsed: false };
+  }
+  if (requested === "fair") {
+    return { comps: primary, actualTier: "fair", fallbackUsed: false };
+  }
+  const fallback = await getFairValueInputsFor(db, referenceId, "fair");
+  return { comps: fallback, actualTier: "fair", fallbackUsed: true };
 }
 
 export async function touchUser(
@@ -84,7 +106,11 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
     return resp;
   }
 
-  const comps = await getFairValueInputsFor(env.DB, ref.id, req.condition);
+  const { comps, actualTier, fallbackUsed } = await getCompsWithFallback(
+    env.DB,
+    ref.id,
+    req.condition,
+  );
   const fv = computeFairValue(comps);
   if (!fv) {
     const resp: EnrichResponse = {
@@ -99,6 +125,8 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
     status: "ok",
     fairValue: fv,
     reference: { brand: ref.brand, model: ref.model, displayName: ref.displayName },
+    tier: actualTier,
+    tierFallback: fallbackUsed,
   };
   await env.CACHE.put(cacheKey, JSON.stringify(resp), { expirationTtl: CACHE_TTL_SECONDS });
   return maybeAttachDelta(resp, req.listedPriceUsd);
