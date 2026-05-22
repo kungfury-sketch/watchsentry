@@ -11,7 +11,7 @@ jobs:
     name: Workers (typecheck + lint + test)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Check if workers/ is initialized
         id: check
         run: |
@@ -21,7 +21,7 @@ jobs:
             echo "initialized=false" >> $GITHUB_OUTPUT
             echo "::notice::workers/ not yet initialized — skipping CI for this job."
           fi
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         if: steps.check.outputs.initialized == 'true'
         with:
           node-version: "22"
@@ -48,7 +48,7 @@ jobs:
     name: Extension (typecheck + lint + test + build)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Check if extension/ is initialized
         id: check
         run: |
@@ -58,7 +58,7 @@ jobs:
             echo "initialized=false" >> $GITHUB_OUTPUT
             echo "::notice::extension/ not yet initialized — skipping CI for this job."
           fi
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         if: steps.check.outputs.initialized == 'true'
         with:
           node-version: "22"
