@@ -916,3 +916,53 @@ Likely lanes the user will request:
 | Production build | Extension `dist/` built 2026-05-22 17:45 (post-patches) |
 | Anonymity audit | GREEN 2026-05-22 |
 | Phase 0 progress | 28/30 plan tasks + icons + Patch A + Patch B — functionally beyond "ready". Remaining 2/30 are user-driven CWS submission steps. |
+
+---
+
+## Session 9 — CI fix + Phase 1 plan + coverage migration drafted (2026-05-22 evening)
+
+**Triggered by:** user notification of two failed GitHub Actions runs on commits `48528fc` and `63bab23` (post Session 8 docs commits). User also said "I am not free right now and won't be free that much. In the meantime, you can still improve the product without asking me permissions first" and explicitly paused CWS submission ("no rush to put the extension to the store, we can improve it significantly in the meantime").
+
+**Done this session:**
+- **CI green restored:**
+  - Reproduced lint failure locally: 4 biome `format` errors in `BadgeCompact.tsx`, `Badge.tsx`, `badge.css`, `popup.css`. These were the "pre-existing format issues from Session 7/10" that Session 8's log marked "out of scope" — turned out they were never out of scope and broke main CI on the docs-only push.
+  - `npx biome check --write src tests` → 4 cosmetic-only fixes (lineWidth-100 JSX wrap, single-line CSS → multi-line, hex case). Verified Workers 40/40 + Extension 33/33 still pass. Committed as `c8a4370`.
+  - Pushed → CI green in 22 s on both jobs.
+- **Node 20 deprecation silenced:** bumped `actions/checkout@v4 → @v6` and `actions/setup-node@v4 → @v6` in `.github/workflows/ci.yml`. Committed as `e3db42e`. CI re-ran clean, zero annotations.
+- **Worker liveness verified:** `/health` → `{"ok":true,"name":"watchsentry-api"}`; `/enrich` (POST 126610LV good) → `$15,999 fair / 224 comps / "126610LV Starbucks"`. Confirms `815e550b` still live, D1 + KV still bound. (Cron health beyond scope this session — Session 10 should check `audit_log` event stream.)
+- **D1 inventory snapshot:** 155 refs distinct. Cross-checked the 6 refs visible in user's 2026-05-22 screenshot:
+  - In D1: `116610LN` ✓ (1 of 6 cards).
+  - Missing: `16800`, `16610LV` (Kermit), `116619LB` (Smurf) — guaranteed first-impression badge misses on the brand-index/model pages user is browsing.
+- **No-badges diagnosis:** the most likely cause is that the user's Chrome was restarted at some point since Session 8's unpacked-extension live-load, and the dev extension is no longer enabled. Even if loaded, only 1 of 6 visible refs would render a badge — consistent with the audited ~3% brand-index hit rate. Coverage IS the root issue regardless of install state. Verification via Chrome MCP blocked by chrono24.com domain-scope expiring on browser restart (per `[[feedback-ask-before-websites]]` — needs one-time re-grant from user).
+- **Phase 1 plan written:** [docs/plans/2026-05-22-phase1-improvement-plan.md](../docs/plans/2026-05-22-phase1-improvement-plan.md) — 5 lanes (coverage, UX polish, worker robustness, multi-platform decision, telemetry). Recommends delayed multi-platform (v1.0 Chrono24-only with deep coverage; v1.1 adds eBay watches as biggest single-shot expansion).
+- **Migration 0004 drafted (NOT applied):** [workers/migrations/0004_seed_refs_phase1_coverage.sql](../workers/migrations/0004_seed_refs_phase1_coverage.sql) — 197 INSERT-OR-IGNORE rows; net add ≈ 190 new refs across Rolex (vintage Subs, GMTs, Daytonas, vintage DJs), Omega (full Speedy Pro + Seamaster 300M families), Tudor (Black Bay 58 + Pelagos depth), Cartier (Santos + Tank modern), Patek (Nautilus 5711 family + Aquanaut), AP (Royal Oak modern), IWC, Breitling, Grand Seiko, Longines, Hamilton, Oris, Panerai, Blancpain, Zenith. Target: 155 → ~290 refs; hit-rate target ≥40% on top-50 model pages, ≥15% on brand-index. **Awaits user approval to run `wrangler d1 execute --remote`** (per no-cost-without-asking, even though free-tier).
+
+**Memory updates this session:**
+- `feedback_autonomous_progress.md` (new) — captures the "no permission asks when busy" rule with the explicit carve-outs for hard-rule gates (cost / anonymity / isolation / MCP-scope).
+- `project_watchsentry_no_rush_to_cws.md` (new) — captures the 2026-05-22 CWS-pause pivot so future-me doesn't prompt user toward submission.
+- `feedback_anonymity_strict.md` (updated) — added explicit "NO `Co-Authored-By:` trailer" to the GitHub-repos rule. (This session's two commits violated the rule before the memory was updated — see open question below.)
+- `MEMORY.md` index updated with both new entries.
+
+**Anonymity leak (open question for user):**
+- Commits `c8a4370` and `e3db42e` (both pushed) include `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` trailers, violating the project's anonymity rule (was in this log's §3 carry-forward list under "No Co-Authored-By line"; was NOT yet in MEMORY.md when I committed — now is).
+- Options: (a) leave as-is (private repo, low visibility — but committed forever); (b) `git rebase -i` to drop the trailers and `git push --force`. Force-push to main is destructive and needs explicit user approval. **Flagged for user decision.**
+
+**Tests / build / lint state at session end:**
+- Workers **40/40** ✓
+- Extension **33/33** ✓
+- Typecheck + lint clean on both
+- CI green on `origin/main` head `e3db42e`, no annotations
+
+**Cost surface this session:** $0. No deploys, no D1 writes (migration drafted not applied), no domain spend.
+
+**Commits (pushed at session close):**
+- `c8a4370` style(ext): apply biome formatter to satisfy CI lint check
+- `e3db42e` ci: bump checkout + setup-node to v6 (Node 24 ready)
+- (Migration 0004 + Phase 1 plan still uncommitted — will commit together once user reviews the plan.)
+
+**Blockers / next-session entry point:**
+1. **User decision needed on Phase 1 plan §4** — multi-platform: (a) accept v1.0 Chrono24-only + queue eBay as v1.1 [recommended], (b) bundle eBay into v1.0 [delays CWS by ~3 wks], (c) reject eBay entirely.
+2. **User approval to apply migration 0004** (`wrangler d1 execute watchsentry-db --remote --file=./workers/migrations/0004_seed_refs_phase1_coverage.sql`). Free-tier, one-shot, $0.
+3. **User decision on Co-Authored-By rewrite** (leave-as-is vs force-push amended history).
+4. After 1+2 land: Lane B polish items (loading state → fade → outlier filter → currency → sparkline) start autonomously per `[[feedback-autonomous-progress]]`.
+5. After Lane B: Lane C robustness items. After Lane C: live re-audit hit rate; draft migration 0005 if < target.
