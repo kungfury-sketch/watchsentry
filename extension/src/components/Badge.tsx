@@ -13,10 +13,24 @@ export function Badge(props: BadgeProps) {
     return <div class="ws-badge ws-loading">WatchSentry…</div>;
   }
   if (props.status === "unknown_reference") {
-    return <div class="ws-badge ws-neutral">WatchSentry: reference not yet tracked</div>;
+    return (
+      <div class="ws-badge ws-neutral">
+        <strong>WatchSentry</strong>
+        <div class="ws-foot ws-foot-flush">
+          We don't have this reference yet — adding new ones weekly based on what people view.
+        </div>
+      </div>
+    );
   }
   if (props.status === "no_data") {
-    return <div class="ws-badge ws-neutral">WatchSentry: not enough sold-comps yet</div>;
+    return (
+      <div class="ws-badge ws-neutral">
+        <strong>WatchSentry</strong>
+        <div class="ws-foot ws-foot-flush">
+          Not enough recent sold-comp signal to compute fair value yet.
+        </div>
+      </div>
+    );
   }
   const tone =
     props.deltaPercent === undefined
@@ -42,7 +56,8 @@ export function Badge(props: BadgeProps) {
         </div>
       )}
       <div class="ws-foot">
-        based on {props.sampleSize} sold-comp{props.sampleSize === 1 ? "" : "s"} · 90d window
+        <span class="ws-foot-brand">WatchSentry</span> ·{" "}
+        {props.sampleSize} sold-comp{props.sampleSize === 1 ? "" : "s"} · 90d window
       </div>
     </div>
   );

@@ -57,6 +57,15 @@
   border-top: 1px solid rgba(127, 127, 127, 0.15);
   letter-spacing: 0.01em;
 }
+.ws-foot-brand {
+  font-weight: 600;
+  color: rgba(127, 127, 127, 1);
+}
+.ws-foot-flush {
+  border-top: none;
+  margin-top: 4px;
+  padding-top: 0;
+}
 
 /* Compact pill badge for search-results cards */
 .ws-badge-compact {
@@ -74,13 +83,22 @@
   background: rgba(127, 127, 127, 0.12);
   color: rgba(127, 127, 127, 1);
 }
-.ws-badge-compact::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
+.ws-brand-chip {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: white;
+  border-radius: 3px;
+  padding: 2px 4px;
+  line-height: 1;
   flex-shrink: 0;
+}
+.ws-badge-compact.ws-good .ws-brand-chip { background: #10b981; }
+.ws-badge-compact.ws-bad .ws-brand-chip { background: #ef4444; }
+.ws-badge-compact.ws-neutral .ws-brand-chip { background: #9ca3af; }
+
+.ws-delta {
+  display: inline-block;
 }
 .ws-badge-compact.ws-good {
   color: #10b981;
