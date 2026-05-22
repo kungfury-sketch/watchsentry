@@ -966,3 +966,67 @@ Likely lanes the user will request:
 3. **User decision on Co-Authored-By rewrite** (leave-as-is vs force-push amended history).
 4. After 1+2 land: Lane B polish items (loading state → fade → outlier filter → currency → sparkline) start autonomously per `[[feedback-autonomous-progress]]`.
 5. After Lane B: Lane C robustness items. After Lane C: live re-audit hit rate; draft migration 0005 if < target.
+
+---
+
+## Session 10 — Migration 0004 applied + Options 1/2 shipped + Lane B polish (2026-05-22 late evening → 2026-05-23 carry-over)
+
+**Triggered by:** user reply "please go ahead with all of these" — explicit blanket approval for the four-point plan (apply 0004, build Option 2 model fallback, build Option 1 auto-discovery, ship Lane B polish).
+
+**Done this session — coverage 155 → 320 + autonomous catalog growth + outlier filter:**
+
+### Migration 0004 — applied to remote D1
+- `wrangler d1 execute --remote --file=./migrations/0004_seed_refs_phase1_coverage.sql` → 166 row changes, watch_references 155 → **320 refs**, Submariner family 8 → 24. All three screenshot misses (`16800`, `16610LV` Kermit, `116619LB` Smurf) now resolvable.
+- Cost: $0 (free-tier D1 write, well below row caps). Cron will backfill sold_comps for new refs starting next 04:00 UTC.
+
+### Option 2 — model-level fallback (worker `deefce47`)
+- New `repo.ts:getModelLevelComps()` JOINing sold_comps to watch_references by brand+model+condition. LIMIT 1000.
+- New `enrich.ts:tryModelFallback()` invoked from BOTH unknown-ref AND no-data paths. Threshold: `MODEL_FALLBACK_MIN_COMPS = 50` to avoid badging on thin model-wide data. Reuses condition-tier fallback to "fair".
+- `enrichRequestSchema` accepts optional `model` field (1..80 chars). Backward-compatible (no model → behaves as before).
+- `EnrichResponse.modelFallback?: boolean` flag for future badge-UI differentiation.
+- Extension `chrono24-search` parser now extracts `model` = first word after brand prefix (coarse but matches D1's canonical model names like "Submariner", "Daytona", "Speedmaster").
+- Extension `content/index.tsx` passes `parsed.model` on detail and `card.model` on cards into the enrich payload.
+- Smoke verified live post-deploy: unknown ref + `model: "Submariner"` → `$14,634 / 717 comps / modelFallback: true`. All three screenshot misses now badge with model fallback on fresh cache keys.
+- Workers tests 40 → 47 (+7 model-fallback). Extension tests 33 → 34 (+1 model parser).
+
+### Option 1 — auto-discovery (worker `46b20898`)
+- Migration `0005_candidate_refs.sql` applied: new `candidate_refs` table with UNIQUE (brand, reference_number) index for idempotent upsert + observation_count DESC index for cron prioritization.
+- New `discover.ts:recordDiscovery()` (ON CONFLICT upsert incrementing observation_count + refreshing last_seen_at) + `pickCandidatesForValidation(limit)` + `markCandidateValidated(id, outcome)`.
+- New `validate.ts:validateCandidate({brand, reference, token, ebayFetch?})` returns `{outcome: "promoted" | "insufficient_comps" | "fetch_error", comps}` based on eBay sold-comp count vs `PROMOTION_MIN_COMPS = 50`.
+- New `validate.ts:promoteCandidate(db, {brand, model, reference})` inserts watch_references row with auto-generated `display_name`, returns new ref id.
+- Worker entry: new `POST /discover` route, zod-validated, returns `{ok: true}` on success / 400 on bad payload.
+- Cron `runDailyRefresh` extended with candidate-validation phase: picks top 20 candidates by observation_count, validates each, promotes valid ones, backfills their sold_comps in the same pass. Audit-log entry now includes `candidatesChecked` + `candidatesPromoted` counts.
+- Extension `api/client.ts:reportDiscovery()` fire-and-forget helper with `keepalive: true` (survives page unload). Called from `content/index.tsx` on BOTH detail and search paths when `/enrich` returns `unknown_reference` AND we have a parsed brand+model+ref.
+- Smoke verified live: POST /discover with new ref `Rolex/Submariner/6538` → insert (observation_count=1); repeat call → upsert (observation_count=2). Invalid payload → 400.
+- Workers tests 47 → 60 (+13 across discover.test.ts + validate.test.ts).
+
+### Lane B polish — outlier filter + fade-in (worker `b8fd8026`)
+- New `outlier.ts:isOutlierTitle(title)` — regex-based filter against eBay listing titles. Catches "for parts", "parts only", "parts/repair", "broken", "damaged", "project", "as-is", "box only", "movement only", "[component] only", aftermarket-component, replacement-part. Allowlist for legit listings ("full set", "all original parts intact", "box, papers, and watch"). Case-insensitive.
+- `ebay.ts:fetchEbaySoldComps` adds `title` to the requested itemSummary projection and filters `!isOutlierTitle(i.title)` before mapping to SoldComp. Defends sold-comp medians from $500 dial / $200 bracelet listings polluting a $10k watch's median.
+- Extension `badge.css`: `@keyframes ws-fade-in` (opacity 0→1 + 2px translateY) applied to both `.ws-badge` and `.ws-badge-compact` at 180ms ease-out. Removes the visual "snap" when the badge mounts post-/enrich.
+- Loading state on full Badge already existed (Session 7); kept as-is.
+- Workers tests 60 → 86 (+26 outlier tests covering parts/box-only/component-only/allowlist/case-insensitivity/null-input paths).
+
+**Tests / build / lint state at session end:**
+- Workers **86/86** ✓ (+46 new across the session)
+- Extension **34/34** ✓ (+1 new)
+- Typecheck + lint clean on both
+- CI green on `origin/main` head `ce6e099`, no annotations
+- Worker live version: `b8fd8026` (deployed 3× this session: 0004 application via SQL only, then `deefce47` Option 2, then `46b20898` Option 1, then `b8fd8026` outlier filter)
+- D1: 320 watch_references / candidate_refs table seeded (1 test entry); sold_comps will refresh + grow via cron at 04:00 UTC
+
+**Cost surface this session:** $0. All deploys + D1 writes on free tier; no external accounts created, no domain spend, no recurring costs added.
+
+**Commits (pushed):**
+- `b099bd5` feat(enrich): model-level fallback when per-ref data absent
+- `135efdb` feat(discovery): auto-grow watch_references from user traffic
+- `ce6e099` feat(quality): title-based outlier filter + badge fade-in
+
+**Memory updates this session:** None new — `[[project-watchsentry-no-rush-to-cws]]` and `[[feedback-autonomous-progress]]` (saved Session 9) carried this session. Co-Authored-By rule from `[[feedback-anonymity-strict]]` honored on all 3 commits.
+
+**Blockers / next-session entry point:**
+1. **Cron at 04:00 UTC** will (a) fetch sold-comps for the 165 new refs from migration 0004 — observable as growth in `sold_comps` row count; (b) attempt to promote any candidate_refs accumulated by then. Audit-log entries `cron_ebay_refresh_done` will show counts.
+2. **Live re-audit on Chrono24** to measure hit-rate lift. Need Chrome MCP scope re-granted for chrono24.com (browser restart wiped it). Target: ≥40% on top-50 model pages (was ~10%); ≥15% on brand-index (was ~3%); should be substantially higher now that model fallback covers any parseable Submariner card even without exact ref match.
+3. **Co-Authored-By rewrite** (Session 9 carry-over) still pending user decision.
+4. Phase 1 plan §4 multi-platform decision still pending user pick.
+5. Future Lane B/C polish items still available: currency conversion, sparkline, condition-derivation from title, price-range filter on eBay search, per-anon-id soft rate limit raise.
