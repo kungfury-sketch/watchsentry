@@ -8,7 +8,7 @@ No personal information about the operator appears on any public-facing surface.
 
 ## Standing checklist
 
-**Status as of 2026-05-20 (post-Session-5 re-audit — pre-CWS-submission checkpoint):**
+**Status as of 2026-05-22 (post-Session-9 re-audit — pre-CWS-submission checkpoint):**
 
 - [x] Domain WHOIS — Cloudflare Registrar, privacy ON. `watchsentry.app` registered 2026-05-18 with default WHOIS privacy.
 - [x] CWS developer profile display name — `WatchSentry`. Registered 2026-05-18.
@@ -26,7 +26,7 @@ No personal information about the operator appears on any public-facing surface.
 - [x] Any tracking/analytics — internal only. Pattern locked: Cloudflare Web Analytics (free, privacy-respecting) when landing site goes live; no third-party analytics SDKs.
 - [x] Cloudflare account profile — internal-only. Login email visible only via `wrangler whoami`; account-level resources require authentication to view.
 - [x] Cloudflare Worker deployment author metadata — internal dashboard metadata only (`cil.omerr@gmail.com` appears in `wrangler deployments list` but is NOT exposed on any public surface). Flagged as awareness item, NOT a violation. Re-confirmed 2026-05-20: two new deploys this session (afc8d1c6 with CORS, 31280a03 with cap tuning), neither changed public-facing surfaces.
-- [x] No PII grep across all tracked files (excluding the documented audit-debt files) — ran 2026-05-20: `git ls-files | grep -v -E '(docs/anonymity-audit|docs/plans/2026-05-18|progress/session-log)' | xargs grep -l -i -E 'omer|cil|hotmail|@gmail|claude|anthropic|kungfury|264698993'` returned ZERO matches. Clean.
+- [x] No PII grep across all tracked files (excluding the documented audit-debt files) — re-ran 2026-05-22 with `docs/audits/2026-05-20-*` added to exclusion list (the audit doc itself intentionally cites the patterns): ONE match in `extension/tests/fixtures/chrono24-listing-rolex-124060.html` (lines 3 and 9, comment header documenting fixture provenance — "captured via Claude in Chrome MCP probe"). Match is BENIGN: internal test fixture, never shipped to Chrome Web Store, repo is private. Comprehensive audit `docs/audits/2026-05-20-comprehensive.md` §11 already acknowledges this. No action required. Prior 2026-05-20 grep returned ZERO matches because it pre-dated commit `026b1c6` which added the documentation comment.
 - [ ] Lemon Squeezy (Phase 1) — brand product page; real KYC kept internal. **NOT APPLICABLE YET** (Phase 1, post-Phase-0-launch).
 - [x] eBay Developer App — `WatchSentry` as app name, `support@watchsentry.app` as compliance contact. Registered 2026-05-18, **ACTIVATED 2026-05-19**.
 - [x] No PII grep on landing source — ran 2026-05-19 against `landing/`: zero matches for `omer/cil/hotmail/gmail/claude/anthropic` outside the legitimate `support@watchsentry.app` brand email.
