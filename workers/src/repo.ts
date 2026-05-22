@@ -87,3 +87,25 @@ export async function getFairValueInputsFor(
     soldAt: r.sold_at,
   }));
 }
+
+// Model-level fallback: returns sold_comps for ANY reference under brand+model.
+// Used when per-ref lookup fails (ref unknown to D1, or ref known but no comps yet).
+// Gives wider price spread than per-ref but lets us badge listings of refs we don't
+// individually track.
+export async function getModelLevelComps(
+  db: D1Database,
+  brand: string,
+  model: string,
+  conditionTier: ConditionTier,
+): Promise<FairValueInput[]> {
+  const rs = await db
+    .prepare(
+      "SELECT sc.sold_price_usd, sc.sold_at FROM sold_comps sc JOIN watch_references wr ON sc.reference_id = wr.id WHERE wr.brand = ? AND wr.model = ? AND sc.condition_tier = ? AND sc.sold_at >= datetime('now', '-90 days') ORDER BY sc.sold_at DESC LIMIT 1000",
+    )
+    .bind(brand, model, conditionTier)
+    .all<{ sold_price_usd: number; sold_at: string }>();
+  return (rs.results ?? []).map((r) => ({
+    soldPriceUsd: r.sold_price_usd,
+    soldAt: r.sold_at,
+  }));
+}

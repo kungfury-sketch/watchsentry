@@ -1,6 +1,7 @@
 export type Chrono24SearchCard = {
   listingElement: HTMLElement;
   brand: string | null;
+  model: string | null;
   referenceNumber: string | null;
   listedPriceUsd: number | null;
 };
@@ -34,12 +35,16 @@ export function parseChrono24Search(doc: Document): Chrono24SearchCard[] {
     seen.add(el);
     cards.push(el);
   }
-  return cards.map((el) => ({
-    listingElement: el,
-    brand: extractBrand(el),
-    referenceNumber: extractReference(el),
-    listedPriceUsd: extractPrice(el),
-  }));
+  return cards.map((el) => {
+    const brand = extractBrand(el);
+    return {
+      listingElement: el,
+      brand,
+      model: extractModel(el, brand),
+      referenceNumber: extractReference(el),
+      listedPriceUsd: extractPrice(el),
+    };
+  });
 }
 
 function extractBrand(el: HTMLElement): string | null {
@@ -49,6 +54,20 @@ function extractBrand(el: HTMLElement): string | null {
     if (titleText.startsWith(compound)) return compound;
   }
   const first = titleText.split(/\s+/)[0];
+  return first ?? null;
+}
+
+// First word after the brand prefix. Coarse on purpose — Chrono24 titles append
+// dial/colorway/variant words ("Date", "Hulk", "Pepsi", "Vintage") that the worker
+// doesn't need to disambiguate the model. The first word is usually the catalog model
+// name as stored in watch_references.model.
+function extractModel(el: HTMLElement, brand: string | null): string | null {
+  if (!brand) return null;
+  const titleText = findTitleText(el);
+  if (!titleText || !titleText.startsWith(brand)) return null;
+  const remainder = titleText.slice(brand.length).trim();
+  if (!remainder) return null;
+  const first = remainder.split(/\s+/)[0];
   return first ?? null;
 }
 

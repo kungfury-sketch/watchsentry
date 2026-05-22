@@ -59,6 +59,7 @@ async function runListing(settings: Settings) {
       condition: parsed.conditionTier,
       listedPriceUsd: parsed.listedPriceUsd ?? undefined,
       anonymousId: settings.anonymousId,
+      model: parsed.model,
     };
     log.info("request body", requestBody);
     const enriched = await enrichListing(requestBody, { apiBase: API_BASE });
@@ -99,6 +100,7 @@ async function runSearch(settings: Settings) {
           condition: "very_good",
           listedPriceUsd: card.listedPriceUsd ?? undefined,
           anonymousId: settings.anonymousId,
+          model: card.model ?? undefined,
         },
         { apiBase: API_BASE },
       );

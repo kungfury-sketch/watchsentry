@@ -3,7 +3,7 @@ import type { ConditionTier } from "./ebay";
 import { type FairValue, computeFairValue } from "./fair-value";
 import type { Env } from "./index";
 import { normalizeReferenceCandidates } from "./normalize";
-import { type WatchRef, findReference, getFairValueInputsFor } from "./repo";
+import { type WatchRef, findReference, getFairValueInputsFor, getModelLevelComps } from "./repo";
 
 export const enrichRequestSchema = z.object({
   brand: z.string().min(1).max(50),
@@ -11,6 +11,7 @@ export const enrichRequestSchema = z.object({
   condition: z.enum(["new", "unworn", "very_good", "good", "fair"]),
   listedPriceUsd: z.number().positive().max(10_000_000).optional(),
   anonymousId: z.string().uuid().optional(),
+  model: z.string().min(1).max(80).optional(),
 });
 
 export type EnrichRequest = z.infer<typeof enrichRequestSchema>;
@@ -22,7 +23,13 @@ export type EnrichResponse = {
   reference?: { brand: string; model: string; displayName: string };
   tier?: ConditionTier;
   tierFallback?: boolean;
+  modelFallback?: boolean;
 };
+
+// Minimum sold-comps required to compute a model-level fair value with usable confidence.
+// Per-ref median uses LIMIT 500; we set this higher than computeFairValue's own threshold
+// to avoid badging on thin/noisy model-wide data.
+const MODEL_FALLBACK_MIN_COMPS = 50;
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
 const DAILY_ENRICHMENT_CAP = 200;
@@ -107,6 +114,13 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
     if (ref) break;
   }
   if (!ref) {
+    const modelResp = await tryModelFallback(env, req);
+    if (modelResp) {
+      await env.CACHE.put(cacheKey, JSON.stringify(modelResp), {
+        expirationTtl: CACHE_TTL_SECONDS,
+      });
+      return maybeAttachDelta(modelResp, req.listedPriceUsd);
+    }
     const resp: EnrichResponse = { status: "unknown_reference" };
     await env.CACHE.put(cacheKey, JSON.stringify(resp), { expirationTtl: CACHE_TTL_SECONDS });
     return resp;
@@ -119,6 +133,13 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
   );
   const fv = computeFairValue(comps);
   if (!fv) {
+    const modelResp = await tryModelFallback(env, req, ref);
+    if (modelResp) {
+      await env.CACHE.put(cacheKey, JSON.stringify(modelResp), {
+        expirationTtl: CACHE_TTL_SECONDS,
+      });
+      return maybeAttachDelta(modelResp, req.listedPriceUsd);
+    }
     const resp: EnrichResponse = {
       status: "no_data",
       reference: { brand: ref.brand, model: ref.model, displayName: ref.displayName },
@@ -136,6 +157,44 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
   };
   await env.CACHE.put(cacheKey, JSON.stringify(resp), { expirationTtl: CACHE_TTL_SECONDS });
   return maybeAttachDelta(resp, req.listedPriceUsd);
+}
+
+// Attempts a model-level fair-value lookup when per-ref data is absent.
+// `knownRef` is supplied when the ref was found but had no comps — its brand+model
+// already disambiguate. When the ref was unknown, we use the request's `model` field.
+async function tryModelFallback(
+  env: Env,
+  req: EnrichRequest,
+  knownRef?: WatchRef,
+): Promise<EnrichResponse | null> {
+  const brand = knownRef?.brand ?? req.brand;
+  const model = knownRef?.model ?? req.model;
+  if (!model) return null;
+
+  // Use the same condition-tier fallback policy as per-ref (try requested, fall to "fair").
+  let comps = await getModelLevelComps(env.DB, brand, model, req.condition);
+  let actualTier: ConditionTier = req.condition;
+  let tierFallbackUsed = false;
+  if (comps.length === 0 && req.condition !== "fair") {
+    comps = await getModelLevelComps(env.DB, brand, model, "fair");
+    actualTier = "fair";
+    tierFallbackUsed = true;
+  }
+  if (comps.length < MODEL_FALLBACK_MIN_COMPS) return null;
+
+  const fv = computeFairValue(comps);
+  if (!fv) return null;
+
+  return {
+    status: "ok",
+    fairValue: fv,
+    reference: knownRef
+      ? { brand: knownRef.brand, model: knownRef.model, displayName: knownRef.displayName }
+      : { brand, model, displayName: `${brand} ${model}` },
+    tier: actualTier,
+    tierFallback: tierFallbackUsed,
+    modelFallback: true,
+  };
 }
 
 function maybeAttachDelta(resp: EnrichResponse, listedPriceUsd?: number): EnrichResponse {

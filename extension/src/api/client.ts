@@ -3,6 +3,7 @@ export type EnrichResponse = {
   fairValue?: { medianUsd: number; sampleSize: number; windowDays: number };
   delta?: { absoluteUsd: number; percent: number };
   reference?: { brand: string; model: string; displayName: string };
+  modelFallback?: boolean;
 };
 
 export async function enrichListing(
@@ -12,6 +13,7 @@ export async function enrichListing(
     condition: string;
     listedPriceUsd?: number;
     anonymousId?: string;
+    model?: string;
   },
   opts: { apiBase: string; fetchImpl?: typeof fetch },
 ): Promise<EnrichResponse> {

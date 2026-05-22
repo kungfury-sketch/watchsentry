@@ -54,4 +54,15 @@ describe("parseChrono24Search", () => {
     const cards = parseFixture();
     for (const c of cards) expect(c.listingElement).toBeInstanceOf(HTMLElement);
   });
+
+  it("extracts model as first word after the brand prefix", () => {
+    const cards = parseFixture();
+    // Title "Rolex Submariner Date" -> model "Submariner"
+    expect(cards[0]?.model).toBe("Submariner");
+    expect(cards[1]?.model).toBe("Submariner");
+    expect(cards[2]?.model).toBe("Submariner");
+    expect(cards[3]?.model).toBe("Submariner");
+    expect(cards[4]?.model).toBe("Submariner");
+    expect(cards[5]?.model).toBe("Submariner");
+  });
 });
