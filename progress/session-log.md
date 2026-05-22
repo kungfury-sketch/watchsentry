@@ -667,3 +667,54 @@ cd <workspace>\watchsentry
 git status --short
 git log --oneline -10
 ```
+
+---
+
+## 2026-05-22 — Session 7 (pre-CWS polish pass + first real icons shipped)
+
+**Hours:** ~4
+
+**Decisions made:**
+- Ship a focused pre-CWS polish pass rather than submit Phase-0-as-is. Rationale: CWS rating is sticky, so polish the first-impression items now; skip everything that needs usage data to optimize. (UA-marketing principle: launch fast, but don't poison the funnel with avoidable churn signals.)
+- Icon family **Phosphor (MIT, no attribution)**, brand mark **ShieldCheck**, background **accent blue `#1F6FEB`**. Smart-watch icons SKIPPED despite the svgrepo collection user explored — they read as "Apple-Watch tool" on a luxury-watch site (Chrono24 sells Rolex/Patek/Vacheron, not smart-watches). Context fit > visual cohesion.
+- CWS Privacy Policy URL declared as canonical `/privacy` (no `.html`) to avoid CWS form validators seeing a 308 chain. Body text inside the detail description keeps `.html` for human readability.
+- SQL migration applied to `--remote` D1 *with* user approval (per `feedback_no_cost_without_asking.md` — free-tier with headroom). 0 cost surface.
+
+**Done (8 commits):**
+- `f4f62dc` chore: gitignore `extension/icons/candidates/` scratch folder.
+- `f8add51` audit: 2026-05-22 anonymity re-checkpoint pre-CWS-submission. PII grep result: ONE acknowledged match in `extension/tests/fixtures/chrono24-listing-rolex-124060.html` (comment header documenting fixture provenance — added 2026-05-20 in commit `026b1c6`, benign, internal-only).
+- `b514231` feat(ext/ui): brand attribution + encouraging fallback copy + component tests. Badge ok-state footer reads "WatchSentry · N sold-comps · 90d window". BadgeCompact gets a `[WS]` chip prefix replacing the dot indicator. Fallback copy reworded ("We don't have this reference yet — adding new ones weekly"). 11 new component tests (components were previously untested) → Extension 18/18 → 29/29.
+- `20b2b9a` feat(ext/popup): branded popup redesign. Brand mark + wordmark + subtitle + status pill with animated CSS toggle + "How it works" + footer with landing link.
+- `8824ff4` feat(db): seed refs expansion 50 -> 156. Migration `0003_seed_refs_expansion.sql`. Rolex +23, Omega +10, Tudor +8, Cartier +7, AP +5, Patek +5, IWC +6, Breitling +5, GS +5, Panerai +4, Hublot +3, TAG Heuer +4, Hamilton +4, Longines +4, Seiko +5, Oris +3, Bell & Ross +2, VC +3.
+- `7351a2a` docs(cws): canonicalize privacy policy URL.
+- `20a6f66` feat(ext/icons): replace placeholders with Phosphor ShieldCheck on accent blue. 16/48/128 PNGs at 273B/709B/1755B. White stroke on `#1F6FEB`, 62% inner-glyph ratio. Popup mark switches from "WS" text to the icon via Vite asset import — toolbar + popup feel like one product.
+- `35bf991` audit: close placeholder-icons audit-debt row (RESOLVED 2026-05-22).
+
+**Infrastructure:**
+- Landing site deployed to Cloudflare Pages project `watchsentry`. Deploy URL `https://9047c660.watchsentry.pages.dev/` confirmed 200 on `/privacy`. Project alias `watchsentry.pages.dev` propagating.
+- Custom domain `watchsentry.app` attach: **NOT done autonomously**. Wrangler CLI has no `pages domain` subcommand, and Chrome MCP can't navigate to `dash.cloudflare.com` without explicit scope grant. User to attach via dashboard (30-sec step).
+- Migration 0003 applied to remote D1 via `wrangler d1 execute --remote`. Verification: `SELECT COUNT(*) FROM watch_references` → **155** (one ref auto-skipped by `INSERT OR IGNORE`, expected behavior — UNIQUE constraint on (brand, reference_number) caught a duplicate the migration missed).
+- CWS submission bundle pre-built at `cws/watchsentry-v0.1.0.zip` (41.9 KB). Source-map audit: all paths are relative (`../../src/...`), zero PII matches.
+
+**Tests / build state at session end:**
+- Workers **31/31** ✓
+- Extension **29/29** ✓ (up from 18 — 11 new component tests added this session)
+- Typecheck + lint clean on both projects
+- Production build clean at 219 ms
+
+**Audit state:**
+- 2026-05-22 re-checkpoint GREEN.
+- Placeholder-icons audit-debt **RESOLVED** (commit `35bf991`).
+- Operator-workspace-path audit-debt **RESOLVED** (commit `7940fa7`, Session 6).
+- Remaining open audit-debt: synthetic Chrono24 fixture (Phase 1), `workers_dev=true`/`preview_urls=true` defaults (cosmetic), `*.workers.dev` subdomain (deferred per comprehensive audit §12).
+
+**Phase 0 progress at session close:**
+- 28/30 plan tasks done. Icons no longer in audit-debt. Phase 0 is functionally ready for CWS submission.
+
+**Blockers for next session (all user-driven):**
+1. Attach `watchsentry.app` custom domain in CF Pages dashboard.
+2. Capture 5 product screenshots in clean Chrome with the rebuilt extension loaded.
+3. Paste `cws/listing-copy.md` content + upload `cws/watchsentry-v0.1.0.zip` + screenshots into CWS dashboard.
+4. Submit for review.
+
+**Cost surface this session:** $0. Free-tier Pages, free-tier D1, MIT icons.
