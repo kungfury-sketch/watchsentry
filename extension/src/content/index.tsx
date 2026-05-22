@@ -1,5 +1,5 @@
 import { render } from "preact";
-import { enrichListing } from "../api/client";
+import { enrichListing, reportDiscovery } from "../api/client";
 import { Badge } from "../components/Badge";
 import { BadgeCompact } from "../components/BadgeCompact";
 import { parseChrono24Listing } from "../parsers/chrono24-listing";
@@ -64,6 +64,12 @@ async function runListing(settings: Settings) {
     log.info("request body", requestBody);
     const enriched = await enrichListing(requestBody, { apiBase: API_BASE });
     log.info("response", enriched);
+    if (enriched.status === "unknown_reference" && parsed.model) {
+      void reportDiscovery(
+        { brand: parsed.brand, model: parsed.model, reference: parsed.referenceNumber },
+        { apiBase: API_BASE },
+      );
+    }
     render(
       <Badge
         status={enriched.status}
@@ -104,6 +110,12 @@ async function runSearch(settings: Settings) {
         },
         { apiBase: API_BASE },
       );
+      if (enriched.status === "unknown_reference" && card.brand && card.model) {
+        void reportDiscovery(
+          { brand: card.brand, model: card.model, reference: card.referenceNumber },
+          { apiBase: API_BASE },
+        );
+      }
       const mount = document.createElement("span");
       card.listingElement.appendChild(mount);
       render(
