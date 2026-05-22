@@ -1,3 +1,5 @@
+import { isOutlierTitle } from "./outlier";
+
 export type ConditionTier = "new" | "unworn" | "very_good" | "good" | "fair";
 
 export type SoldComp = {
@@ -62,6 +64,7 @@ export async function fetchEbaySoldComps(args: {
   const data = (await res.json()) as {
     itemSummaries?: Array<{
       itemId: string;
+      title?: string;
       price: { value: string; currency: string };
       condition?: string;
       itemEndDate?: string;
@@ -69,6 +72,7 @@ export async function fetchEbaySoldComps(args: {
   };
   return (data.itemSummaries ?? [])
     .filter((i) => i.price.currency === "USD")
+    .filter((i) => !isOutlierTitle(i.title))
     .map((i) => ({
       sourceListingId: i.itemId,
       soldPriceUsd: Number.parseFloat(i.price.value),

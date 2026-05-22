@@ -2,6 +2,17 @@
    Tuned to work on both Chrono24's light and dark themes. Uses translucent backgrounds
    layered over the host color, with mid-saturation accent colors that read on both. */
 
+@keyframes ws-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .ws-badge {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 13px;
@@ -14,6 +25,7 @@
   color: inherit;
   max-width: 420px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  animation: ws-fade-in 180ms ease-out;
 }
 
 .ws-badge.ws-good {
@@ -82,6 +94,7 @@
   letter-spacing: 0.02em;
   background: rgba(127, 127, 127, 0.12);
   color: rgba(127, 127, 127, 1);
+  animation: ws-fade-in 180ms ease-out;
 }
 .ws-brand-chip {
   font-size: 9px;
