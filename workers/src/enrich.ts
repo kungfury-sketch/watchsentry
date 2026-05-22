@@ -2,7 +2,8 @@ import { z } from "zod";
 import type { ConditionTier } from "./ebay";
 import { type FairValue, computeFairValue } from "./fair-value";
 import type { Env } from "./index";
-import { findReference, getFairValueInputsFor } from "./repo";
+import { normalizeReferenceCandidates } from "./normalize";
+import { type WatchRef, findReference, getFairValueInputsFor } from "./repo";
 
 export const enrichRequestSchema = z.object({
   brand: z.string().min(1).max(50),
@@ -100,7 +101,11 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
     if (u.capped) return { status: "no_data" };
   }
 
-  const ref = await findReference(env.DB, req.brand, req.reference);
+  let ref: WatchRef | null = null;
+  for (const candidate of normalizeReferenceCandidates(req.brand, req.reference)) {
+    ref = await findReference(env.DB, req.brand, candidate);
+    if (ref) break;
+  }
   if (!ref) {
     const resp: EnrichResponse = { status: "unknown_reference" };
     await env.CACHE.put(cacheKey, JSON.stringify(resp), { expirationTtl: CACHE_TTL_SECONDS });
