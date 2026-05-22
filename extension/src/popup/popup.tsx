@@ -1,6 +1,9 @@
 import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { getSettings, setSettings } from "../storage";
+import "./popup.css";
+
+const VERSION = "0.1.0";
 
 function App() {
   const [enabled, setEnabled] = useState(true);
@@ -19,20 +22,46 @@ function App() {
   }
 
   return (
-    <div style={{ padding: 12, minWidth: 220, fontFamily: "system-ui, sans-serif" }}>
-      <h1 style={{ fontSize: 16, margin: "0 0 8px" }}>WatchSentry</h1>
-      <label style={{ display: "block", fontSize: 13 }}>
-        <input
-          type="checkbox"
-          checked={enabled}
-          disabled={!ready}
-          onChange={(e) => toggle((e.currentTarget as HTMLInputElement).checked)}
-        />{" "}
-        Enable on Chrono24
-      </label>
-      <p style={{ fontSize: 11, color: "#666", marginTop: 8 }}>
-        Open a Chrono24 listing to see the fair-value badge.
-      </p>
+    <div class="ws-popup">
+      <div class="ws-head">
+        <div class="ws-mark" aria-hidden="true">WS</div>
+        <div class="ws-titles">
+          <span class="ws-name">WatchSentry</span>
+          <span class="ws-tag">Fair value on every Chrono24 listing</span>
+        </div>
+      </div>
+
+      <div class={`ws-status ${enabled ? "ws-on" : "ws-off"}`}>
+        <span class="ws-dot" aria-hidden="true" />
+        <span class="ws-status-label">
+          {ready ? (enabled ? "Active on Chrono24" : "Paused") : "Loading…"}
+        </span>
+        <label class="ws-toggle" aria-label="Enable on Chrono24">
+          <input
+            type="checkbox"
+            checked={enabled}
+            disabled={!ready}
+            onChange={(e) => toggle((e.currentTarget as HTMLInputElement).checked)}
+          />
+          <span class="ws-slider" />
+        </label>
+      </div>
+
+      <div class="ws-explainer">
+        <h2>How it works</h2>
+        <ul>
+          <li>Open any Chrono24 listing or search page.</li>
+          <li>WatchSentry compares the listed price to a 90-day eBay sold-comp median.</li>
+          <li>The badge appears next to the price — green below, red above, gray near fair.</li>
+        </ul>
+      </div>
+
+      <div class="ws-foot">
+        <a href="https://watchsentry.app/" target="_blank" rel="noopener noreferrer">
+          watchsentry.app
+        </a>
+        <span>v{VERSION}</span>
+      </div>
     </div>
   );
 }
