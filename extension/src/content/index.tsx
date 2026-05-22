@@ -4,8 +4,15 @@ import { Badge } from "../components/Badge";
 import { BadgeCompact } from "../components/BadgeCompact";
 import { parseChrono24Listing } from "../parsers/chrono24-listing";
 import { parseChrono24Search } from "../parsers/chrono24-search";
+import { parseCrownAndCaliberListing } from "../parsers/crownandcaliber-listing";
+import { parseCrownAndCaliberSearch } from "../parsers/crownandcaliber-search";
 import { parseEbayListing } from "../parsers/ebay-listing";
 import { parseEbaySearch } from "../parsers/ebay-search";
+import { parseHodinkeeListing } from "../parsers/hodinkee-listing";
+import { parseWatchchartsListing } from "../parsers/watchcharts-listing";
+import { parseWatchchartsSearch } from "../parsers/watchcharts-search";
+import { parseWatchfinderListing } from "../parsers/watchfinder-listing";
+import { parseWatchfinderSearch } from "../parsers/watchfinder-search";
 import { type Settings, getSettings } from "../storage";
 import { type Host, chooseHost, chooseRoute } from "./route";
 
@@ -29,15 +36,20 @@ const log = {
   },
 };
 
+// Per-host anchor selectors — the badge sits above the price block to feel native.
+const ANCHOR_SELECTORS: Record<Host, string[]> = {
+  chrono24: [".detail-page-price", ".js-detail-page-price-section"],
+  ebay: [".x-price-primary", ".x-bin-price", "[itemprop='price']"],
+  watchfinder: [".prod-price", ".prod-price-figure"],
+  crownandcaliber: [".product__price", ".price__current"],
+  watchcharts: [".wc-price"],
+  hodinkee: [".product__price", ".price-item--regular"],
+};
+
 function injectListingMountPoint(host: Host): HTMLElement {
   const mount = document.createElement("div");
   mount.id = "watchsentry-mount";
-  // Per-host anchor selectors — the badge sits above the price block to feel native.
-  const anchorSelectors =
-    host === "chrono24"
-      ? [".detail-page-price", ".js-detail-page-price-section"]
-      : [".x-price-primary", ".x-bin-price", "[itemprop='price']"];
-  for (const sel of anchorSelectors) {
+  for (const sel of ANCHOR_SELECTORS[host]) {
     const anchor = document.querySelector(sel);
     if (anchor?.parentElement) {
       anchor.parentElement.insertBefore(mount, anchor);
@@ -48,8 +60,42 @@ function injectListingMountPoint(host: Host): HTMLElement {
   return mount;
 }
 
+function parseHostListing(host: Host) {
+  switch (host) {
+    case "chrono24":
+      return parseChrono24Listing(document);
+    case "ebay":
+      return parseEbayListing(document);
+    case "watchfinder":
+      return parseWatchfinderListing(document);
+    case "crownandcaliber":
+      return parseCrownAndCaliberListing(document);
+    case "watchcharts":
+      return parseWatchchartsListing(document);
+    case "hodinkee":
+      return parseHodinkeeListing(document);
+  }
+}
+
+function parseHostSearch(host: Host) {
+  switch (host) {
+    case "chrono24":
+      return parseChrono24Search(document);
+    case "ebay":
+      return parseEbaySearch(document);
+    case "watchfinder":
+      return parseWatchfinderSearch(document);
+    case "crownandcaliber":
+      return parseCrownAndCaliberSearch(document);
+    case "watchcharts":
+      return parseWatchchartsSearch(document);
+    case "hodinkee":
+      return []; // Hodinkee collection-page support deferred to Phase 1.2.
+  }
+}
+
 async function runListing(settings: Settings, host: Host) {
-  const parsed = host === "chrono24" ? parseChrono24Listing(document) : parseEbayListing(document);
+  const parsed = parseHostListing(host);
   if (!parsed) {
     log.warn(`${host} listing parser returned null`);
     return;
@@ -96,7 +142,7 @@ async function runListing(settings: Settings, host: Host) {
 const SEARCH_CONCURRENCY = 6;
 
 async function runSearch(settings: Settings, host: Host) {
-  const cards = (host === "chrono24" ? parseChrono24Search(document) : parseEbaySearch(document))
+  const cards = parseHostSearch(host)
     .slice(0, MAX_CARDS_PER_PAGE)
     .filter((c) => c.brand && c.referenceNumber);
 
