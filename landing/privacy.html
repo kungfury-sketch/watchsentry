@@ -9,20 +9,25 @@
 <body>
 <main>
 <h1>Privacy Policy</h1>
-<p class="fineprint">Last updated: 2026-05-19.</p>
+<p class="fineprint">Last updated: 2026-05-23.</p>
+
+<h2>Where the extension runs</h2>
+<p>WatchSentry runs on watch-listing pages on these marketplaces only: <strong>Chrono24, eBay (US/UK/DE)</strong>. It does not run on any other site.</p>
 
 <h2>What data we collect</h2>
 <ul>
   <li><strong>Anonymous user ID</strong> — a randomly generated UUID stored locally in your browser via <code>chrome.storage.local</code>. We do NOT collect your name, email, IP address, or any personally identifying information. The UUID is sent alongside enrichment requests purely to enforce a per-day usage cap; we do not link it to any other identifier.</li>
-  <li><strong>Listing data</strong> — when you view a Chrono24 listing, the extension extracts the brand, reference number, condition, and listed price from the page and sends it to our API to look up fair value. We do not log or store individual queries by user; we keep only aggregate per-day usage counts per anonymous ID.</li>
+  <li><strong>Listing data</strong> — when you view a supported listing page, the extension extracts the brand, model, reference number, condition, and listed price from the page and sends it to our API to look up fair value. We do not log or store individual queries by user; we keep only aggregate per-day usage counts per anonymous ID.</li>
+  <li><strong>Auto-discovery signals</strong> — when you view a listing for a reference we don't yet track, the extension sends the (brand, model, reference) triple to our API so we can add it to a candidate catalog for future support. This signal carries no anonymous ID and no listing URL.</li>
 </ul>
 
 <h2>What we do NOT collect</h2>
 <ul>
   <li>Your real name, email, or any personally identifying information</li>
   <li>Your IP address. (Cloudflare may log IPs at the network layer for DDoS protection; we do not access or retain those logs.)</li>
-  <li>Your browsing history outside Chrono24</li>
+  <li>Your browsing history outside the supported marketplaces listed above</li>
   <li>Any data from any other website</li>
+  <li>Listing URLs, seller identifiers, or any data that could identify a specific listing or seller</li>
   <li>Your watch purchases or transactions</li>
 </ul>
 

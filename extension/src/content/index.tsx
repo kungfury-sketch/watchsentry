@@ -4,8 +4,10 @@ import { Badge } from "../components/Badge";
 import { BadgeCompact } from "../components/BadgeCompact";
 import { parseChrono24Listing } from "../parsers/chrono24-listing";
 import { parseChrono24Search } from "../parsers/chrono24-search";
+import { parseEbayListing } from "../parsers/ebay-listing";
+import { parseEbaySearch } from "../parsers/ebay-search";
 import { type Settings, getSettings } from "../storage";
-import { chooseRoute } from "./route";
+import { type Host, chooseHost, chooseRoute } from "./route";
 
 // Cut over to api.watchsentry.app once the custom Worker route is wired (Week 5).
 const API_BASE = "https://watchsentry-api.txrz.workers.dev";
@@ -27,29 +29,34 @@ const log = {
   },
 };
 
-function injectListingMountPoint(): HTMLElement {
+function injectListingMountPoint(host: Host): HTMLElement {
   const mount = document.createElement("div");
   mount.id = "watchsentry-mount";
-  const anchor =
-    document.querySelector(".detail-page-price") ??
-    document.querySelector(".js-detail-page-price-section");
-  if (anchor?.parentElement) {
-    anchor.parentElement.insertBefore(mount, anchor);
-  } else {
-    document.body.prepend(mount);
+  // Per-host anchor selectors — the badge sits above the price block to feel native.
+  const anchorSelectors =
+    host === "chrono24"
+      ? [".detail-page-price", ".js-detail-page-price-section"]
+      : [".x-price-primary", ".x-bin-price", "[itemprop='price']"];
+  for (const sel of anchorSelectors) {
+    const anchor = document.querySelector(sel);
+    if (anchor?.parentElement) {
+      anchor.parentElement.insertBefore(mount, anchor);
+      return mount;
+    }
   }
+  document.body.prepend(mount);
   return mount;
 }
 
-async function runListing(settings: Settings) {
-  const parsed = parseChrono24Listing(document);
+async function runListing(settings: Settings, host: Host) {
+  const parsed = host === "chrono24" ? parseChrono24Listing(document) : parseEbayListing(document);
   if (!parsed) {
-    log.warn("parser returned null on listing page");
+    log.warn(`${host} listing parser returned null`);
     return;
   }
   log.info("parsed", parsed);
 
-  const mount = injectListingMountPoint();
+  const mount = injectListingMountPoint(host);
   render(<Badge status="loading" />, mount);
 
   try {
@@ -88,15 +95,15 @@ async function runListing(settings: Settings) {
 
 const SEARCH_CONCURRENCY = 6;
 
-async function runSearch(settings: Settings) {
-  const cards = parseChrono24Search(document)
+async function runSearch(settings: Settings, host: Host) {
+  const cards = (host === "chrono24" ? parseChrono24Search(document) : parseEbaySearch(document))
     .slice(0, MAX_CARDS_PER_PAGE)
     .filter((c) => c.brand && c.referenceNumber);
 
   await processWithConcurrency(cards, SEARCH_CONCURRENCY, async (card) => {
     if (!card.brand || !card.referenceNumber) return;
     // Idempotency: skip if this card already has a badge from a prior pass (defense against
-    // Chrono24's SPA re-rendering the cards while our async work was in flight).
+    // SPA re-renders mid-flight).
     if (card.listingElement.querySelector(".ws-badge-compact")) return;
     try {
       const enriched = await enrichListing(
@@ -148,11 +155,14 @@ async function main() {
   const settings = await getSettings();
   if (!settings.enabled) return;
 
-  const route = chooseRoute(document);
+  const host = chooseHost(location.hostname);
+  if (!host) return; // off-marketplace page (shouldn't happen under our manifest matches, but defensive)
+
+  const route = chooseRoute(document, host);
   if (route === "listing") {
-    await runListing(settings);
+    await runListing(settings, host);
   } else if (route === "search") {
-    await runSearch(settings);
+    await runSearch(settings, host);
   }
 }
 
