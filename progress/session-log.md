@@ -589,7 +589,11 @@ All remaining work is user-driven (5 screenshots / branded icons / paste copy + 
 
 ---
 
-## Session 7 entry-point checklist (READ THIS FIRST NEXT SESSION)
+## Session 7 entry-point checklist (SUPERSEDED — see Session 9 checklist at end of file)
+
+> **⚠️ THIS SECTION IS HISTORICAL.** It was written end-of-Session-6 to guide Session 7. Sessions 7 + 8 are now complete (worker version is `815e550b`, refs are 155, route + normalize patches shipped). For current entry-point instructions, jump to the bottom of this file: **"Session 9 entry-point checklist (READ THIS FIRST NEXT SESSION)"**.
+>
+> Kept below for archival continuity — do not act on it.
 
 1. Auto-load `MEMORY.md` (harness does).
 2. Read the "Session 6" section above.
@@ -826,4 +830,89 @@ After the closeout above, attempted a live product audit on Chrono24 with the re
 3. Submit for review.
 4. After CWS approval (1-3 business days typical), update landing CTA placeholder with real `chromewebstore.google.com/detail/<id>` URL.
 
-**Commits (planned, not yet pushed at log-write time):** route patch (3 files), normalize patch (3 files), session log entry. Will be 1-2 commits depending on user's preferred granularity.
+**Commits (pushed at session close):**
+- `abe42ea` feat(ext): content-based route detection (resilient to Chrono24 URL changes)
+- `8abb508` feat(worker): server-side ref normalization fallback (Omega + dial-code variants)
+- `63bab23` docs(progress): Session 8 — live audit + route/normalize patches shipped
+
+All three on `origin/main`. Working tree clean at session close.
+
+---
+
+## Session 9 entry-point checklist (READ THIS FIRST NEXT SESSION)
+
+> User signaled at Session 8 close: stepping away for **≥1 week**. Future-me, assume calendar drift of 1-2+ weeks when reading this. Treat all "today's state" claims below as point-in-time — verify before acting.
+
+### 0. Auto-context that will already be loaded
+- `MEMORY.md` (auto). Key entries: `project_locked_portfolio_v1.md` (updated 2026-05-22), `feedback_skill_discipline.md`, `feedback_no_cost_without_asking.md`, `feedback_anonymity_strict.md`, `reference_wrangler_remote_flag.md`.
+- Per `project_passive_income_empire.md` rule: read `<workspace>/passive-income-empire/sessions/README.md` first → click into the most recent dated entry → read it fully → only then look at this bet-level log.
+
+### 1. Verify state hasn't drifted since 2026-05-22
+
+```powershell
+# Worker still up + still the post-Session-8 version?
+curl https://watchsentry-api.txrz.workers.dev/health
+# Expected: {"ok":true,"name":"watchsentry-api"}
+
+# Worker normalize patch still live? (Was version 815e550b at deploy.)
+curl -X POST https://watchsentry-api.txrz.workers.dev/enrich -H "Content-Type: application/json" -d '{"brand":"Omega","reference":"31030425001001","condition":"very_good"}'
+# Expected at session close: {"status":"ok","fairValue":{"medianUsd":6399,"sampleSize":106,...},"reference":{"brand":"Omega","model":"Speedmaster",...}}
+# If returns "unknown_reference" → worker was rolled back or never deployed: redeploy normalize.ts via `wrangler deploy` (after asking).
+# medianUsd will drift with time (eBay sold-comps refresh nightly via cron); ≠ 6399 is fine, "status":"ok" + sampleSize > 50 is what matters.
+
+# Git in sync with origin?
+cd <repo>; git status; git log --oneline -5
+# Expected last commit: 63bab23 docs(progress): Session 8 — live audit + route/normalize patches shipped
+# Expected: working tree clean, in sync with origin/main.
+
+# Tests still green?
+cd workers; npm test -- --run
+cd extension; npm test -- --run
+# Expected: Workers 40/40, Extension 33/33.
+
+# Has the daily cron been running? D1 sold_comps row count should be growing.
+npx wrangler d1 execute watchsentry-db --remote --command "SELECT COUNT(*) AS n FROM sold_comps; SELECT MAX(sold_at) AS last_sold_at FROM sold_comps; SELECT MAX(created_at) AS last_audit_event FROM audit_log WHERE event_type LIKE 'cron%';"
+# At session close: ~6,626+ comps. If 7+ days passed, n should be ≥7k.
+```
+
+### 2. Ask the user which lane to pursue
+
+State at hand-off:
+- **CWS submission** still pending (user-driven only — 5 screenshots + paste + upload + click submit).
+- **Patches A + B** shipped and live-verified (no remaining autonomous work on those).
+- **D1 ref coverage** is the biggest unfixed gap (Phase 1 backlog): ~3% hit rate on brand-index, ~10% on model pages. Could be substantially improved by seeding Sub family + Speedy family sub-variants.
+- **Worker / extension code** is in a known-good state; no in-flight refactors.
+
+Likely lanes the user will request:
+- **Lane A — CWS submission walk-through.** User has already approved the listing copy + screenshot plan in earlier sessions. They need to: load extension dist in clean Chrome, capture 5 PNG screenshots @ 1280×800 per `cws/screenshot-plan.md`, paste `cws/listing-copy.md` fields into CWS dashboard, upload `cws/watchsentry-v0.1.0.zip` + screenshots, click submit. ~1-2 hrs of user time, no autonomous work.
+- **Lane B — Phase 1 backlog work (autonomous):** D1 ref coverage expansion (see Session 8 entry "Findings deferred to Phase 1" section). Could autonomously draft a `0004_seed_refs_coverage_phase1.sql` migration targeting top-100 missed refs on Chrono24 search results. Will need user approval before `wrangler d1 execute --remote` (per cost-without-asking rule, even though it's free-tier).
+- **Lane C — CWS approval landed, real install URL needed.** If user reports CWS reviewer approved the extension during the gap: update landing-page CTA placeholder with the real `chromewebstore.google.com/detail/<id>` URL, redeploy Pages. Quick.
+- **Lane D — T5b dropcatch background bet** kickoff. Separate folder under `<workspace>/`. Not started. Requires a brainstorming pass first.
+
+### 3. Hard rules to apply (carry-forward from MEMORY.md)
+
+- **No deploy / register / subscribe / commit dollars without asking first** (`feedback_no_cost_without_asking.md`). Includes `wrangler deploy`, `wrangler pages deploy`, `wrangler d1 execute --remote` for mutations. KV/D1 reads are fine.
+- **Strict anonymity on every public artifact** (`feedback_anonymity_strict.md`). Audit BEFORE pushing to public-visible repos, creating accounts, or deploying landing-page changes that expose attribution.
+- **Skill discipline** (`feedback_skill_discipline.md`). Invoke skills BEFORE code. Process skills first.
+- **`--remote` flag** for `wrangler d1` and `wrangler kv` against production (`reference_wrangler_remote_flag.md`).
+- **No Co-Authored-By line** in commits (per Session 0 decision — anonymity rule overrides Bash tool default).
+- **Strict project isolation** — never put bet code/assets/plans in `passive-income-empire/`.
+
+### 4. External state snapshot at session close (2026-05-22 ~18:50 local)
+
+| Surface | State |
+|---|---|
+| Worker version | `815e550b-0a63-4797-b9b9-e8583e3ef3ff` at `https://watchsentry-api.txrz.workers.dev` |
+| Worker cron | `0 4 * * *` (eBay sold-comps refresh daily 04:00 UTC) |
+| D1 binding | `watchsentry-db` |
+| D1 row counts | 155 watch_references / ~6,626+ sold_comps / ~14 users |
+| KV cache | namespace `45d2b00e2fd545c38df468b15b8ec097` |
+| Extension | unpacked dev install in user's Chrome at session close (will need re-load if Chrome was restarted) |
+| CWS bundle | `cws/watchsentry-v0.1.0.zip` 42.2 KB (PII-clean source maps) |
+| Landing site | Cloudflare Pages `watchsentry` project; custom domain `watchsentry.app` LIVE (per Session 7) |
+| GitHub repo | `github.com/kungfury-sketch/watchsentry` (private) |
+| GitHub last commit | `63bab23` |
+| Tests at close | Workers 40/40 ✓ · Extension 33/33 ✓ |
+| Production build | Extension `dist/` built 2026-05-22 17:45 (post-patches) |
+| Anonymity audit | GREEN 2026-05-22 |
+| Phase 0 progress | 28/30 plan tasks + icons + Patch A + Patch B — functionally beyond "ready". Remaining 2/30 are user-driven CWS submission steps. |
