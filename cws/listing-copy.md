@@ -115,13 +115,13 @@ WatchSentry is an independent buyer-side tool and is not affiliated with, endors
 ## Privacy policy URL
 
 ```
-https://watchsentry.app/privacy.html
+https://watchsentry.app/privacy
 ```
 
 **Fallback if the custom domain isn't live yet at submission time:**
 
 ```
-https://watchsentry.pages.dev/privacy.html
+https://watchsentry.pages.dev/privacy
 ```
 
 (Cloudflare Pages auto-assigns a `<project>.pages.dev` URL the moment the site deploys; works regardless of custom domain state.)
