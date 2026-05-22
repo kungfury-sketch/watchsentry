@@ -51,3 +51,6 @@ pnpm-debug.log*
 *.bak
 *.tmp
 *.cache
+
+# Icon-picking scratch — non-final assets that get rendered before we pick + ship
+extension/icons/candidates/
