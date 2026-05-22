@@ -763,3 +763,67 @@ After the closeout above, attempted a live product audit on Chrono24 with the re
 - Worker `31280a03` live. D1: 155 refs. CWS .zip pre-built. Landing live at watchsentry.app + www.watchsentry.app, all 200, PII-clean.
 - All 4 polish items shipped. Tests Workers 31/31 + Extension 29/29 green. Build clean.
 - Only the live-audit is pending before the user-driven screenshot + CWS submit flow.
+
+---
+
+## 2026-05-22 — Session 8 (live audit + two route/normalize patches shipped)
+
+**Hours:** ~2
+
+**Decisions made:**
+- Patch BOTH discovered gaps before CWS submission (not ship-as-is). Reasons: search-mode BadgeCompact was previously dead code in real Chrono24 flows (route gate misaligned with their URL scheme) and CWS rating is sticky.
+- Patch A approach: content-based dispatch (parser-result driven), not URL pattern matching. More resilient to Chrono24 URL changes (we've already eaten two redesigns this Phase 0).
+- Patch B approach: server-side normalize fallback (worker), not extension-side. Single source of truth, all client versions benefit, cache keys still use original ref so per-input-format cache hits work.
+- Deploy approved per `feedback_no_cost_without_asking.md`: free-tier code-only update, ~10s deploy, no schema changes.
+
+**Done:**
+- **Live audit pass (Chrome MCP navigate gate now open after user's Chrome reload):**
+  - ✅ Detail page (Sub 126610LV Starbucks): full Badge `$15,999 fair · +9.6% · 224 sold-comps · 90d window`. Math verified: ($17,530 list − $15,999 fair) / $15,999 = +9.57% — correct.
+  - ✅ Fallback copy on untracked ref (Christopher Ward Sealander C63): "WatchSentry — We don't have this reference yet — adding new ones weekly based on what people view." Renders cleanly above price.
+  - ✅ Accuracy spot-check 4 refs: 2/4 hit (`126610LV` ✓, `79030N` Tudor BB58 ✓), 2/4 miss (`16613LB` vintage Sub, `35705000` Speedy Pro). Misses are coverage/normalization, not parser bugs.
+  - 🟡 BadgeCompact on `/search/index.htm?query=...`: route-gate dead code — Chrono24 always redirects searches to `/<brand>/<model>--modN.htm` URLs, so the search branch never fired in real usage. **Patch A unblocks this.**
+  - 🟡 Reference normalization: `16613LB` (D1 has 124060/126610LN with suffix; doesn't have 16613 or 16613LB at all — pure coverage gap), `35705000` (Chrono24 strips dots; D1 has dotted Omega refs). **Patch B unblocks the Omega class of misses.**
+- **Patch A — content-based route detection** (extension):
+  - New `extension/src/content/route.ts` with pure `chooseRoute(doc): "listing"|"search"|"none"` (parses JSON-LD Product first → listing; else any `.wt-listing-item.js-listing-item.listing-item` → search; else none).
+  - `content/index.tsx` `main()` swapped from `location.pathname.startsWith("/search/")` to `chooseRoute(document)`.
+  - 4 new unit tests (`tests/content/route.test.ts`): listing fixture, search fixture, empty page, detail-with-related-cards (prefers listing). RED → GREEN → green run.
+  - Extension tests **29 → 33** ✓.
+- **Patch B — server-side ref normalization** (worker):
+  - New `workers/src/normalize.ts` with pure `normalizeReferenceCandidates(brand, ref): string[]`. Always returns original first; appends stripped-letter variant when ref ends with 1-4 trailing letters AND prefix begins+ends with digit; appends dot-stripped variant when ref contains `.`/`-`; Omega-specific 4.2.2 split for 8-digit numeric, 3.2.2.2.2.3 for 14-digit numeric; dedupe order-preserving.
+  - `workers/src/enrich.ts` `enrich()` swapped single `findReference(req.brand, req.reference)` for a loop walking `normalizeReferenceCandidates(req.brand, req.reference)`, breaking on first hit.
+  - 9 new unit tests (`tests/normalize.test.ts`). RED → GREEN → green run.
+  - Workers tests **31 → 40** ✓.
+- **Deploy:** `wrangler deploy` → version `815e550b-0a63-4797-b9b9-e8583e3ef3ff` live at `watchsentry-api.txrz.workers.dev`. Cron + bindings unchanged.
+- **Live re-verification after deploy + extension reload:**
+  - `/rolex/index.htm` brand-index page: **2 BadgeCompacts on 60 cards** (was 0). Texts: `WS +19.0% vs fair`, `WS -16.5% vs fair`.
+  - `/rolex/submariner--mod1.htm` model page: **7 BadgeCompacts on 73 cards** (was 0). 1 good (-10.9%), 6 neutral; deltas span -10.9% → +9.2%.
+  - Detail page (126610LV): full Badge unchanged (cache hit), exactly 1 mount div — confirms dispatch correctly preferred listing route over search route on JSON-LD detail pages.
+  - Curl smoke: Omega `31030425001001` (14-digit dots-stripped) → `$6,399 fair / 106 sold-comps / 310.30.42.50.01.001 displayName` via normalize. Identical to direct dotted-form hit. **Patch B end-to-end verified live.**
+- **CWS bundle rebuilt:** `cws/watchsentry-v0.1.0.zip` 41.9 KB → 42.2 KB (+278 bytes from route dispatch). Source-map paths still relative-only (PII grep clean). Includes new `src/content/route.ts` source map.
+
+**Tests / build / lint state at session end:**
+- Workers **40/40** ✓ (+9 normalize tests)
+- Extension **33/33** ✓ (+4 route tests)
+- Production extension build 241 ms; total bundle size unchanged within rounding
+- Typecheck clean both projects
+- Lint clean on all session-touched files (pre-existing 4 popup.css format issues from Session 7 still present, unrelated)
+
+**Findings deferred to Phase 1 (out of scope for CWS Phase 0 submission):**
+- D1 ref-coverage expansion: `16613` (vintage Sub two-tone), Submariner sub-variants (`126610LV` ↔ family), Speedy Pro `3570.50.00` family, and dial-code suffix completeness. Hit rate observed at 2/4 popular refs spot-checked + ~3.3% on `/rolex/index.htm` cards + ~9.6% on `/rolex/submariner--mod1.htm` cards. Phase 1 should target ≥40% on top-50 model pages.
+- Omega sub-variant coverage (`.50.01.002` vs stored `.50.01.001` etc.) — second-most-common miss class after dial-code suffixes.
+- Brand-index pages give worse hit rates than model pages because models span more brands → fewer cards from any single seeded brand. Phase 1 may want to bias ref-expansion toward brand diversity rather than depth-per-model.
+
+**Memory updates this session:** None — existing rules carried the session (skill discipline pre-TDD, no-cost-without-asking pre-deploy, anonymity strict on commits, strict-isolation on file paths).
+
+**Cost surface this session:** $0. Free-tier Workers deploy, no D1 mutations, no domain spend, no external account creation.
+
+**Phase 0 progress at session close:**
+- 28/30 plan tasks + icons + first-impression polish + route patch + normalization patch shipped. Phase 0 functionally beyond "ready" — now buyer-side overlay fires across all 4 Chrono24 page types, not just listing detail.
+
+**Blockers for next session (all user-driven, no autonomous work blocked):**
+1. Capture 5 product screenshots in clean Chrome with the rebuilt extension (one screenshot should now show compact badges on a brand-index or model page, which wasn't possible before this session).
+2. Paste `cws/listing-copy.md` + upload `cws/watchsentry-v0.1.0.zip` + screenshots into CWS dashboard.
+3. Submit for review.
+4. After CWS approval (1-3 business days typical), update landing CTA placeholder with real `chromewebstore.google.com/detail/<id>` URL.
+
+**Commits (planned, not yet pushed at log-write time):** route patch (3 files), normalize patch (3 files), session log entry. Will be 1-2 commits depending on user's preferred granularity.
