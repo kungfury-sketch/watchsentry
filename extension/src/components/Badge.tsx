@@ -56,8 +56,8 @@ export function Badge(props: BadgeProps) {
         </div>
       )}
       <div class="ws-foot">
-        <span class="ws-foot-brand">WatchSentry</span> ·{" "}
-        {props.sampleSize} sold-comp{props.sampleSize === 1 ? "" : "s"} · 90d window
+        <span class="ws-foot-brand">WatchSentry</span> · {props.sampleSize} sold-comp
+        {props.sampleSize === 1 ? "" : "s"} · 90d window
       </div>
     </div>
   );

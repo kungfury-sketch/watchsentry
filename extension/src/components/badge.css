@@ -93,9 +93,15 @@
   line-height: 1;
   flex-shrink: 0;
 }
-.ws-badge-compact.ws-good .ws-brand-chip { background: #10b981; }
-.ws-badge-compact.ws-bad .ws-brand-chip { background: #ef4444; }
-.ws-badge-compact.ws-neutral .ws-brand-chip { background: #9ca3af; }
+.ws-badge-compact.ws-good .ws-brand-chip {
+  background: #10b981;
+}
+.ws-badge-compact.ws-bad .ws-brand-chip {
+  background: #ef4444;
+}
+.ws-badge-compact.ws-neutral .ws-brand-chip {
+  background: #9ca3af;
+}
 
 .ws-delta {
   display: inline-block;
