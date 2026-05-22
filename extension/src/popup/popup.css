@@ -32,15 +32,16 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: var(--ws-brand);
-  color: white;
+  overflow: hidden;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  flex-shrink: 0;
+}
+.ws-mark img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .ws-titles { display: flex; flex-direction: column; line-height: 1.15; }

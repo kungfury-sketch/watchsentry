@@ -2,6 +2,7 @@ import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { getSettings, setSettings } from "../storage";
 import "./popup.css";
+import iconSrc from "../../icons/48.png";
 
 const VERSION = "0.1.0";
 
@@ -24,7 +25,9 @@ function App() {
   return (
     <div class="ws-popup">
       <div class="ws-head">
-        <div class="ws-mark" aria-hidden="true">WS</div>
+        <div class="ws-mark" aria-hidden="true">
+          <img src={iconSrc} alt="" />
+        </div>
         <div class="ws-titles">
           <span class="ws-name">WatchSentry</span>
           <span class="ws-tag">Fair value on every Chrono24 listing</span>
