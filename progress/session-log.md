@@ -1030,3 +1030,65 @@ Likely lanes the user will request:
 3. **Co-Authored-By rewrite** (Session 9 carry-over) still pending user decision.
 4. Phase 1 plan §4 multi-platform decision still pending user pick.
 5. Future Lane B/C polish items still available: currency conversion, sparkline, condition-derivation from title, price-range filter on eBay search, per-anon-id soft rate limit raise.
+
+---
+
+## Session 11 — Multi-platform v1.0 + remaining 4 marketplaces (2026-05-22 late night)
+
+**Triggered by:** user decisions on Session 10's three open items: (1) multi-platform v1.0 = "go with more platforms" (override of my Chrono24-only recommendation), (2) Co-Authored-By rewrite = "leave as is", (3) live audit = attempted via Chrome MCP. Plus eBay/Watchcharts/Hodinkee/Watchfinder/Crown&Caliber chosen as the expansion set; BaT explicitly NOT picked.
+
+**Done this session:**
+
+### eBay parser shipped (commit `c1611b5`)
+- `parsers/ebay-listing.ts`: JSON-LD Product path + item-specifics fallback (`.ux-layout-section__row` label/value). Maps schema.org + free-text condition strings.
+- `parsers/ebay-search.ts`: `.s-item` cards, defensive against `"Shop on eBay"` placeholder. First-word-after-brand model extraction.
+- `content/route.ts`: `chooseHost(hostname)` strict-anchor regex returning `chrono24|ebay|null`; `chooseRoute(doc, host)` switch.
+- `content/index.tsx`: main() picks host first, dispatches to per-host parsers. ANCHOR_SELECTORS per-host.
+- `manifest.config.ts`: matches expanded to `*.ebay.com`, `*.ebay.co.uk`, `*.ebay.de`. Description rewritten.
+- `landing/privacy.html`: Discloses supported marketplaces explicitly. Discloses /discover signal. Last-updated 2026-05-23.
+- 23 new tests; Extension 33 → 56.
+
+### Remaining 4 marketplace parsers shipped (commit `1d4d74f`)
+- `parsers/jsonld.ts`: shared `extractProductFromJsonLd()` with `@graph` + Array root walking. Reused across all 4 new parsers.
+- `parsers/watchfinder-listing.ts` + `watchfinder-search.ts`: JSON-LD + `.prod-spec` dl fallback; `.prod-tile` cards with `.prod-tile-ref` line.
+- `parsers/crownandcaliber-listing.ts` + `search.ts`: JSON-LD + `.spec-row` label/value fallback; `.product-card` grid.
+- `parsers/watchcharts-listing.ts` + `search.ts`: JSON-LD + `.wc-specs` table fallback; `.wc-listing-card` grid.
+- `parsers/hodinkee-listing.ts`: Shopify-based, JSON-LD only (no DOM fallback by design).
+- `content/route.ts`: `chooseHost` + `chooseRoute` extended to all 6 hosts.
+- `content/index.tsx`: parseHostListing/parseHostSearch dispatch tables; ANCHOR_SELECTORS map for all 6.
+- `manifest.config.ts`: 5 more host matches (`watchfinder.co.uk/com`, `crownandcaliber.com`, `watchcharts.com`, `shop.hodinkee.com`).
+- `landing/privacy.html`: marketplace list extended to 6 sites.
+- 34 new tests; Extension 56 → **90**.
+
+### Live audit attempt — BLOCKED on Chrome MCP
+- Chrome restart + extension reinstall reset MCP per-domain consent state.
+- Confirmed via tests: `navigate` to ANY URL (chrono24, example.com, claude.ai) returns "Navigation to this domain is not allowed" — global lockdown, not per-domain.
+- User's `claude.ai/settings → Claude in Chrome → Default for all sites = Allow extension` setting visible in shared screenshot but NOT propagating to MCP server post-reinstall.
+- `switch_browser` was no-op (only 1 browser registered).
+- **Proxy audit via curl** showed 6/6 hit rate on the 6 refs from user's 2026-05-22 screenshot (was 1/6 pre-Phase-1). 5/6 served via model fallback (`modelFallback: true` flag), 1/6 (124060) has per-ref data already. Phase 1 result confirmed.
+- Live browser audit deferred to next session when MCP scope flow is unblocked.
+
+### Anonymity decision recorded
+- User: "leave as is" on Co-Authored-By trailers in commits `c8a4370` + `e3db42e`. No force-push to main. Future commits (this session and forward) honor the no-trailer rule per updated `[[feedback-anonymity-strict]]`.
+
+**Tests / build / lint state at session end:**
+- Workers **86/86** ✓ (unchanged from Session 10 — multi-platform expansion is client-side only)
+- Extension **90/90** ✓ (+57 across the session)
+- Typecheck + lint clean both projects
+- CI green on `origin/main` head `1d4d74f`
+- D1 + worker live state unchanged from Session 10 close (320 refs / `b8fd8026` worker)
+
+**Memory updates this session:** None new — existing memories carried.
+
+**Cost surface this session:** $0. No deploys (worker unchanged, no migration applied), no D1 writes, no external accounts created.
+
+**Commits (pushed):**
+- `c1611b5` feat(ext): multi-platform v1.0 — add eBay parser + hostname dispatch
+- `1d4d74f` feat(ext): Watchfinder + Crown&Caliber + Watchcharts + Hodinkee parsers
+
+**Blockers / next-session entry point:**
+1. **Real-page fixture capture for the 5 new marketplaces** (eBay, Watchfinder, Crown&Caliber, Watchcharts, Hodinkee) — synthetic fixtures pass tests but the parsers are unverified against live DOM. Same Phase 1.1 launch-blocker pattern as Chrono24 Phase 0.
+2. **Chrome MCP live audit unblock** — investigate why post-reinstall global allowlist isn't applying. Possibly needs Anthropic-side workaround.
+3. **Cron at 04:00 UTC** should have run by next session — verify `audit_log` for `cron_ebay_refresh_done` with `candidatesChecked` + `candidatesPromoted` counts. Expect first-time sold_comps backfill for 165 newly-seeded refs.
+4. **Hodinkee Shop collection-page parser** still deferred.
+5. **CWS listing-copy update** to reflect multi-platform when submission moment arrives.
