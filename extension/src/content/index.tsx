@@ -5,6 +5,7 @@ import { BadgeCompact } from "../components/BadgeCompact";
 import { parseChrono24Listing } from "../parsers/chrono24-listing";
 import { parseChrono24Search } from "../parsers/chrono24-search";
 import { type Settings, getSettings } from "../storage";
+import { chooseRoute } from "./route";
 
 // Cut over to api.watchsentry.app once the custom Worker route is wired (Week 5).
 const API_BASE = "https://watchsentry-api.txrz.workers.dev";
@@ -133,10 +134,11 @@ async function main() {
   const settings = await getSettings();
   if (!settings.enabled) return;
 
-  if (location.pathname.startsWith("/search/")) {
-    await runSearch(settings);
-  } else {
+  const route = chooseRoute(document);
+  if (route === "listing") {
     await runListing(settings);
+  } else if (route === "search") {
+    await runSearch(settings);
   }
 }
 
