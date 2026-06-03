@@ -1170,3 +1170,44 @@ Likely lanes the user will request:
 **Key finding:** the 3 highest-value platforms (Chrono24 + eBay + Watchfinder) are now all live-verified-working. Dealer SEARCH pages are cleanly fixable (clean cards); dealer LISTING pages are fragile (no JSON-LD → h1 + best-effort price, graceful degradation). Remaining 3 dealers are SPAs needing per-site route discovery. Extension 97/97 green throughout.
 
 **Decision — shipped marketplace set FINALIZED (`013de10`):** user agreed to ship the 3 verified platforms and **disable** Crown & Caliber + WatchCharts + Hodinkee (never live-verified; SPAs). Unwired from `manifest.config.ts` matches, `content/route.ts` `Host` dispatch, `content/index.tsx` dispatch + ANCHOR_SELECTORS, and `landing/privacy.html` (marketplace list trimmed + date bumped; popup "How it works" updated). The 3 dealer parser files stay **DORMANT** (synthetic-tested, imported only by `marketplaces.test.ts`) for a future verified re-enable — see the note in `content/route.ts`. Content bundle 21.4 to 15.7 KB (dealers tree-shaken out). **ACTIVE MARKETPLACES = Chrono24, eBay (US/UK/DE), Watchfinder (UK/US), all live-verified.** Extension 97/97 + Workers 115/115 green; pushed (`013de10`).
+
+---
+
+## Session 12 — FINAL CLOSE-OUT & CURRENT-STATE SNAPSHOT (2026-06-03)
+
+> **NEXT SESSION: read THIS section first** — it supersedes every earlier "current state" claim in this log. This was a very large multi-part session (currency fix → deploy → full 5-agent audit → live Chrome verification → marketplace consolidation → close-out). Repo HEAD `a687616`, 88 commits, working tree clean, all pushed to `origin/main`.
+
+### State per layer (verified 2026-06-03)
+| Layer | State |
+|---|---|
+| **Worker** | LIVE `2ceeacd6` @ `https://watchsentry-api.txrz.workers.dev`. Cron `0 4 * * *` (FX refresh → eBay sold-comps → candidate validation). Features: 200/day cap, condition + model-level fallback, `/discover` auto-discovery, title outlier filter, Omega-aware normalize, **currency-aware delta** (ECB rates in KV `fx:rates:usd`), **condition-from-title** ingest, **price-range filter**. Health OK. |
+| **Extension** | **3 active LIVE-VERIFIED marketplaces:** Chrono24, eBay (US/UK/DE), Watchfinder (UK/US). **3 DISABLED** (dormant parsers, unwired from manifest/route/content): Crown & Caliber, WatchCharts, Hodinkee. Currency-aware; honest "active eBay listings" copy. `dist/` built (~15.7 KB content bundle). |
+| **D1** `watchsentry-db` | 321 watch_references / ~46.8k sold_comps (ALL `fair` tier — condition-from-title only affects FUTURE ingests; existing rows frozen by `INSERT OR IGNORE`) / 14 users / 1 candidate_ref. Cron ran daily through 2026-06-03. |
+| **KV** `45d2b00e…` | `fx:rates:usd` warmed (30 currencies, ECB 2026-06-03 incl. TRY 45.96); `/enrich` 6h response cache. |
+| **Landing** | `watchsentry.app` live (CF Pages). `privacy.html` lists the 3 active marketplaces (updated 2026-06-03). |
+| **Repo** | `github.com/kungfury-sketch/watchsentry` (private), `main` @ `a687616`, clean, synced. |
+| **Tests** | Workers **115/115**, Extension **106/106**. typecheck + lint + build clean on both. |
+| **Anonymity** | Working tree GREEN (PII redacted `dfcf086`). ⚠️ **git HISTORY still contains the personal email** → `git filter-repo` scrub + force-push REQUIRED before any repo-visibility change (destructive, USER-GATED). Authorship 100% brand-alias; secrets clean (only `wrangler.example.toml` tracked). |
+| **CWS** | Submission PAUSED (user). Bundle `cws/watchsentry-v0.1.0.zip` is PRE-multi-platform (rebuild before submit). |
+
+### What this session shipped (commits `1282418` → `a687616`)
+- **Currency-aware delta** (worker `8d5b09b` + ext `0f8cc12`/`1282418`) — non-USD listings (EUR/GBP/CHF) now get a correct delta via cached ECB conversion. DEPLOYED + live-verified (same 15000 → +2.4% USD / +18.9% EUR / +37.6% GBP). Cents-parse bug fixed.
+- **Worker accuracy** — `condition-from-title` (`8893afc`) + `price-range filter` (`cc2108b`), deployed as `2ceeacd6`.
+- **Full 5-agent audit** (workers / extension / security / anonymity / functionality+data) — findings throughout this log.
+- **Anonymity remediation** (`dfcf086`) — redacted personal CF email from 3 tracked docs (history scrub still pending).
+- **Honesty relabel** (`802c080`) — badge no longer says "sold-comp" (data is active ASKING listings, not sold) → "active eBay listings".
+- **Live Chrome verification + fixes:** eBay-search was BROKEN on live DOM (eBay migrated to `su-card`) → fixed (`0ebf2aa`); Watchfinder both parsers broken → fixed (`c4c9aef`); http/https `itemCondition` bug → fixed (`c40c019`). Chrono24 (both) + eBay-listing verified working unchanged.
+- **Marketplace consolidation** (`013de10`) — ship the 3 verified, disable the 3 unverified SPAs.
+- **Tests** — dedicated `jsonld` unit tests (`a687616`).
+- **New memory:** `reference_wrangler_oauth_degraded.md` (deploy auth 10000 → re-login).
+
+### Open items / next-session entry point
+1. **[USER-GATED] git-history PII scrub** — `git filter-repo` + force-push to purge the personal email from history; REQUIRED before any repo publish. Destructive — do NOT run without explicit approval.
+2. **[USER-GATED] CWS submission** — rebuild `cws/watchsentry-v0.1.0.zip` (now Chrono24+eBay+Watchfinder), update `cws/listing-copy.md` to name the 3 marketplaces, capture 5 screenshots, paste, submit.
+3. **[AUTONOMOUS, anytime] worker hardening** — daily cap is bypassable (omit/rotate `anonymousId`) → IP-based limit / require id; `INSERT OR IGNORE` freezes condition (backfill OR `ON CONFLICT DO UPDATE`); apply price-range filter to model-level fallback.
+4. **[AUTONOMOUS] test gaps** — cron orchestration (`runDailyRefresh`) and content-script `main()` are untested (audit's top robustness gaps).
+5. **[DEFERRED] re-enable dealers** — Crown & Caliber / WatchCharts / Hodinkee parser files are DORMANT (synthetic-tested) in tree; SPAs needing per-site route discovery. Re-wire (manifest + `content/route.ts` + `content/index.tsx` + `landing/privacy.html`) when properly live-verified.
+6. **[KNOWN DATA CAVEATS]** "fair value" = median of eBay ACTIVE ASKING listings (Browse API), NOT sold prices (Marketplace Insights API is gated) — relabeled honestly, but the data still biases high; `sold_at` = ingest time (90d window really = "ingested within 90d").
+7. **If `wrangler deploy` fails auth `10000`** while D1 reads work → stale OAuth token → user `wrangler logout` + `wrangler login` ([[reference-wrangler-oauth-degraded]]).
+
+### Cost surface this session: $0 (free-tier worker deploys, D1/KV writes within free tier, no new accounts, no domain spend).
