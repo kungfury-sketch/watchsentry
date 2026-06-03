@@ -1129,3 +1129,32 @@ Likely lanes the user will request:
 - **Next accuracy item DONE — condition-from-title (commit `8893afc`, pushed, NOT yet deployed):** `conditionFromTitle()` in `workers/src/ebay.ts` classifies eBay sold-comps by title keywords (new/unworn/very_good/good, with false-positive guards like "mint green dial" ≠ mint condition) when eBay omits the structured condition — so tiers stop collapsing to `fair`. Affects **future** cron ingests only (existing comps keep their tier via `INSERT OR IGNORE`). Workers 102 → **109** tests. Live worker is still `0d641375` (currency only); this ingest change needs a redeploy to activate — **batching the deploy with the next item (eBay price-range/outlier filter); flag before `wrangler deploy`.**
 - **Next up:** eBay price-range filter — two-pass robust median ([0.25×,4×] of first-pass median) to drop clean-titled junk (straps/parts) that the keyword outlier filter misses; then deploy the ingest batch.
 - **Price-range filter DONE + ingest batch DEPLOYED — worker `2ceeacd6`:** `filterByPriceRange()` (`cc2108b`) + condition-from-title (`8893afc`) now live. Effect lands at the next 04:00 UTC cron (classifies new comps by title, trims price outliers per ref). Verify next session via D1: `SELECT condition_tier, COUNT(*) FROM sold_comps GROUP BY condition_tier` should start showing non-`fair` tiers as inventory churns; median sample sizes should tighten slightly. Workers **115/115** green. **All three Session-12 improvements — currency, condition-from-title, price-range — now LIVE.**
+
+---
+
+## Session 12 — Full project audit + live Chrome verification (2026-06-03 night)
+
+**Triggered by:** user asked to (1) continue (extend currency to other marketplaces), (2) **audit EVERYTHING** (all-time, not just this session), (3) report status; then "also try chrome too."
+
+**Continue — currency extended to all marketplace LISTING parsers (`1282418`):** shared `jsonld.ts` now carries price+currency (not USD-only); extracted `parsePriceAndCurrency` → `parsers/price.ts` reused across Chrono24 + the 4 dealer DOM fallbacks + eBay item-specifics. **Fixed a cents-parsing bug** (`$24,500.00` → 24500, not 2450000) that the whole-price Chrono24 fixtures had masked. Extension 95→96. (Non-Chrono24 *search*-card currency was still pending here — eBay-search fixed later this session; Watchfinder/C&C/WatchCharts search still pending.)
+
+**Full audit — 5 parallel auditors (workers / extension / security / anonymity / functionality+data) + live infra/git checks.** Headline findings:
+- 🔴→✅ **ANONYMITY: personal CF email leaked in 3 tracked docs** (session-log + 2 audit docs). **Redacted working tree (`dfcf086`).** Git HISTORY still contains it → `git filter-repo` scrub + force-push needed before any repo publish (destructive, **user-gated**). Authorship 100% clean (all 77 commits = brand alias); secrets clean (only `wrangler.example.toml` tracked); public surfaces clean.
+- 🔴 **PRODUCT HONESTY: "sold-comp" was a factual mislabel** — comps are eBay **Browse = active ASKING listings**, not sold (true sold = gated Marketplace Insights API). Asking prices bias the "fair value" HIGH. **Relabeled to "active eBay listings" (`802c080`).** Also: `sold_at = ingest time` (90d window really = "ingested within 90d"); **condition tiers are 100% `fair`** (confirmed live: 46,773/46,773) — condition-from-title only helps FUTURE ingests + `INSERT OR IGNORE` freezes existing rows; coverage 321 refs.
+- 🔴 **VERIFICATION: 5/6 parsers never validated against real DOM.** (Chrono24 *was* live-verified S5/S8 but its fixture is synthetic.) Cron orchestration + content-script `main()` have ZERO tests.
+- 🟡 **CODE:** daily cap bypassable (omit/rotate `anonymousId`); `INSERT OR IGNORE` never updates condition/price; model-fallback skips the price-range filter; `/discover` unauth write (bounded by 50-comp promote gate).
+- 🟢 **SECURITY: clean baseline** — all SQL parameterized, no DOM-XSS, secrets never logged/returned, extension minimally-permissioned + privacy-policy-accurate, CORS `*` fine. Only real gap: abuse/cost (add CF WAF rate-limit on `CF-Connecting-IP` before launch).
+
+**Chrome MCP — UNBLOCKED this session** (was globally blocked S7/S10/S11):
+- **Chrono24:** Cloudflare bot-challenges the automated MCP browser ("Bir dakika lütfen" / `challenge-error-text`). Cannot auto-verify; **did NOT attempt to bypass** (CAPTCHA/bot-detection rule). Product is unaffected for real users in their own session.
+- **eBay search: CONFIRMED BROKEN on live DOM → FIXED (`0ebf2aa`).** eBay migrated `li.s-item` → `.su-card-container` with `.s-card__title` / `.s-card__subtitle` ("Condition · Brand") / `.s-card__price`. Old parser found **0 cards** on real eBay. Rewrote with live-validated selectors (tested on 60 real cards: **price 100%, ref 85%, brand 77%**), made currency-aware (`listedPrice`+`listedCurrency`), brand via known-substring (titles now lead with a year). Fixture rebuilt from real structure.
+
+**State at session close:** Workers 115/115 + Extension 96/96 green; typecheck/lint/build clean. Worker live `2ceeacd6` (unchanged this part). Commits `1282418`, `dfcf086`, `0ebf2aa`, `802c080` pushed.
+
+**Open / next (priority):**
+1. **[user] git-history scrub** before any publish; **[user] save real Chrono24 + eBay LISTING pages** (or re-grant a non-bot-flagged browser) to verify those parsers — Chrome MCP can't get past Chrono24 Cloudflare.
+2. **The other 4 search parsers (Watchfinder/C&C/WatchCharts + their listings) are almost certainly stale** like eBay was — re-verify against live DOM + fix; they use invented selectors.
+3. **[autonomous] worker fixes:** require/rotate-proof the cap; backfill condition on existing comps OR add `ON CONFLICT DO UPDATE`; apply price-range filter to model-level fallback.
+4. **[autonomous] tests** for cron orchestration + content-script main flow.
+5. **[pre-launch] CF WAF rate-limit** on `/enrich` + `/discover`.
+6. Minor: popup "How it works" still says "Chrono24" only (now 6 marketplaces); `txrz` subdomain → `api.watchsentry.app` before publish.
