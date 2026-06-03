@@ -54,7 +54,9 @@ function App() {
         <h2>How it works</h2>
         <ul>
           <li>Open any Chrono24 listing or search page.</li>
-          <li>WatchSentry compares the listed price to a 90-day eBay sold-comp median.</li>
+          <li>
+            WatchSentry compares the listed price to the median of active eBay listings (90 days).
+          </li>
           <li>The badge appears next to the price — green below, red above, gray near fair.</li>
         </ul>
       </div>

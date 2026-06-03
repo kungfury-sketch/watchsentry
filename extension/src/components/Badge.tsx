@@ -27,7 +27,7 @@ export function Badge(props: BadgeProps) {
       <div class="ws-badge ws-neutral">
         <strong>WatchSentry</strong>
         <div class="ws-foot ws-foot-flush">
-          Not enough recent sold-comp signal to compute fair value yet.
+          Not enough recent listing data to estimate a price yet.
         </div>
       </div>
     );
@@ -56,8 +56,8 @@ export function Badge(props: BadgeProps) {
         </div>
       )}
       <div class="ws-foot">
-        <span class="ws-foot-brand">WatchSentry</span> · {props.sampleSize} sold-comp
-        {props.sampleSize === 1 ? "" : "s"} · 90d window
+        <span class="ws-foot-brand">WatchSentry</span> · {props.sampleSize} active listing
+        {props.sampleSize === 1 ? "" : "s"} · 90d
       </div>
     </div>
   );

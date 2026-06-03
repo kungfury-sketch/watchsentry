@@ -11,7 +11,7 @@ export function BadgeCompact(props: BadgeCompactProps) {
   return (
     <div
       class={`ws-badge-compact ws-${tone}`}
-      title="WatchSentry · vs 90-day eBay sold-comp median"
+      title="WatchSentry · vs median of active eBay listings (90d)"
     >
       <span class="ws-brand-chip" aria-label="WatchSentry">
         WS
