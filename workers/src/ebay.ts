@@ -43,6 +43,27 @@ export function conditionFromTitle(title: string | undefined): ConditionTier | n
   return null;
 }
 
+// Two-pass robust filter: compute the comps' median price, then drop any priced outside
+// [0.25x, 4x] of it. Removes clean-titled accessory/parts listings (straps, bezels,
+// bracelets priced far below the watch) and multi-watch lots (far above) that the
+// title-keyword outlier filter misses. The band is wide so genuine same-reference
+// listings are never dropped. No-op below 4 comps (the center isn't yet reliable).
+const PRICE_RANGE_LOW = 0.25;
+const PRICE_RANGE_HIGH = 4;
+
+export function filterByPriceRange(comps: SoldComp[]): SoldComp[] {
+  if (comps.length < 4) return comps;
+  const prices = comps.map((c) => c.soldPriceUsd).sort((a, b) => a - b);
+  const mid = Math.floor(prices.length / 2);
+  const lower = prices[mid - 1] ?? 0;
+  const upper = prices[mid] ?? 0;
+  const median = prices.length % 2 === 1 ? upper : (lower + upper) / 2;
+  if (median <= 0) return comps;
+  const lo = median * PRICE_RANGE_LOW;
+  const hi = median * PRICE_RANGE_HIGH;
+  return comps.filter((c) => c.soldPriceUsd >= lo && c.soldPriceUsd <= hi);
+}
+
 export async function getEbayAppToken(
   appId: string,
   certId: string,
@@ -87,7 +108,7 @@ export async function fetchEbaySoldComps(args: {
       itemEndDate?: string;
     }>;
   };
-  return (data.itemSummaries ?? [])
+  const comps = (data.itemSummaries ?? [])
     .filter((i) => i.price.currency === "USD")
     .filter((i) => !isOutlierTitle(i.title))
     .map((i) => ({
@@ -100,4 +121,5 @@ export async function fetchEbaySoldComps(args: {
         : (conditionFromTitle(i.title) ?? "fair"),
       soldAt: i.itemEndDate ?? new Date().toISOString(),
     }));
+  return filterByPriceRange(comps);
 }
