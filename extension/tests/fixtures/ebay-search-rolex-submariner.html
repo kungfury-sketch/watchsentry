@@ -1,82 +1,57 @@
 <!doctype html>
+<!--
+  Structure captured from LIVE www.ebay.com search results on 2026-06-03: the
+  `.su-card-container` / `.s-card__title|subtitle|price` layout that replaced the legacy
+  `li.s-item` markup. Card data is representative, not a verbatim page dump. Note: modern
+  eBay titles often lead with a year/qualifier ("2023 Rolex …"), and the subtitle is
+  "Condition · Brand" — so brand must be matched as a known substring, not the first word.
+-->
 <html lang="en">
-<head>
-<title>rolex submariner | eBay (synthetic fixture)</title>
-</head>
-<body>
-<ul class="srp-results srp-list clearfix">
-  <li class="s-item s-item--large">
-    <div class="s-item__wrapper clearfix">
-      <a class="s-item__link" href="https://www.ebay.com/itm/synthetic-001">
-        <div class="s-item__title"><span>Rolex Submariner Date 116610LN Black Steel Mens Watch</span></div>
-      </a>
-      <div class="s-item__details">
-        <div class="s-item__detail s-item__detail--primary">
-          <span class="s-item__price">$11,499.00</span>
+  <head><title>rolex submariner | eBay</title></head>
+  <body>
+    <ul>
+      <!-- Placeholder card eBay injects into results; must be skipped. -->
+      <li>
+        <div class="su-card-container su-card-container--vertical">
+          <span class="su-styled-text primary default s-card__title">Shop on eBay</span>
+          <span class="su-styled-text primary bold large-1 s-card__price">$20.00</span>
         </div>
-        <div class="s-item__subtitle">Pre-Owned</div>
-      </div>
-    </div>
-  </li>
-  <li class="s-item s-item--large">
-    <div class="s-item__wrapper clearfix">
-      <a class="s-item__link" href="https://www.ebay.com/itm/synthetic-002">
-        <div class="s-item__title"><span>Rolex Submariner 124060 No-Date 41mm 2024 Unworn Box Papers</span></div>
-      </a>
-      <div class="s-item__details">
-        <div class="s-item__detail s-item__detail--primary">
-          <span class="s-item__price">$13,200.00</span>
+      </li>
+      <li>
+        <div class="su-card-container su-card-container--vertical">
+          <span class="su-styled-text primary default s-card__title">2023 Rolex Submariner Date 116610LN 40mm Black</span>
+          <span class="su-styled-text secondary default s-card__subtitle">Brand New · Rolex</span>
+          <span class="su-styled-text primary bold large-1 s-card__price">$11,499</span>
         </div>
-        <div class="s-item__subtitle">New (Other)</div>
-      </div>
-    </div>
-  </li>
-  <li class="s-item s-item--large">
-    <div class="s-item__wrapper clearfix">
-      <a class="s-item__link" href="https://www.ebay.com/itm/synthetic-003">
-        <div class="s-item__title"><span>Rolex Submariner 16610LV Kermit 50th Anniversary 2003</span></div>
-      </a>
-      <div class="s-item__details">
-        <div class="s-item__detail s-item__detail--primary">
-          <span class="s-item__price">$18,800.00</span>
+      </li>
+      <li>
+        <div class="su-card-container su-card-container--vertical">
+          <span class="s-card__title">Rolex Submariner No-Date 124060 Steel</span>
+          <span class="s-card__subtitle">Pre-Owned · Rolex</span>
+          <span class="s-card__price">$13,200</span>
         </div>
-        <div class="s-item__subtitle">Pre-Owned</div>
-      </div>
-    </div>
-  </li>
-  <li class="s-item s-item--large">
-    <div class="s-item__wrapper clearfix">
-      <a class="s-item__link" href="https://www.ebay.com/itm/synthetic-004">
-        <div class="s-item__title"><span>Rolex Submariner 116619LB Smurf 18k White Gold Blue Dial</span></div>
-      </a>
-      <div class="s-item__details">
-        <div class="s-item__detail s-item__detail--primary">
-          <span class="s-item__price">$36,950.00</span>
+      </li>
+      <li>
+        <div class="su-card-container su-card-container--vertical">
+          <span class="s-card__title">Rolex Submariner Kermit 16610LV Green</span>
+          <span class="s-card__subtitle">Pre-Owned · Rolex</span>
+          <span class="s-card__price">$18,800</span>
         </div>
-        <div class="s-item__subtitle">Pre-Owned</div>
-      </div>
-    </div>
-  </li>
-  <li class="s-item s-item--large">
-    <div class="s-item__wrapper clearfix">
-      <a class="s-item__link" href="https://www.ebay.com/itm/synthetic-005">
-        <div class="s-item__title"><span>Rolex Submariner Date 16800 Vintage 1985 - Box and Papers</span></div>
-      </a>
-      <div class="s-item__details">
-        <div class="s-item__detail s-item__detail--primary">
-          <span class="s-item__price">$9,750.00</span>
+      </li>
+      <li>
+        <div class="su-card-container su-card-container--vertical">
+          <span class="s-card__title">Rolex Submariner Smurf 116619LB White Gold</span>
+          <span class="s-card__subtitle">Pre-Owned · Rolex</span>
+          <span class="s-card__price">$36,950</span>
         </div>
-        <div class="s-item__subtitle">Pre-Owned</div>
-      </div>
-    </div>
-  </li>
-  <li class="s-item s-item--placeholder">
-    <div class="s-item__wrapper clearfix">
-      <div class="s-item__title s-item__title--has-tags">
-        <span class="LIGHT_HIGHLIGHT">Shop on eBay</span>
-      </div>
-    </div>
-  </li>
-</ul>
-</body>
+      </li>
+      <li>
+        <div class="su-card-container su-card-container--vertical">
+          <span class="s-card__title">Rolex Submariner 16800 Vintage Transitional</span>
+          <span class="s-card__subtitle">Pre-Owned · Rolex</span>
+          <span class="s-card__price">$9,750</span>
+        </div>
+      </li>
+    </ul>
+  </body>
 </html>

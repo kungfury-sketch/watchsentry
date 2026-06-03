@@ -1,25 +1,30 @@
+import { parsePriceAndCurrency } from "./price";
+
 export type EbaySearchCard = {
   listingElement: HTMLElement;
   brand: string | null;
   model: string | null;
   referenceNumber: string | null;
-  listedPriceUsd: number | null;
+  listedPrice: number | null;
+  listedCurrency: string | null;
 };
 
-// eBay search results render each item as <li class="s-item ...">. Some pages include a
-// placeholder card ("Shop on eBay" template) that we filter out by requiring a real
-// .s-item__title with both brand and reference extractable.
-const CARD_SELECTOR = "li.s-item";
+// eBay migrated its search results (2024+) to a card layout: each result is a
+// `.su-card-container` with `.s-card__title`, `.s-card__subtitle` ("Condition · Brand"),
+// and `.s-card__price`. The legacy `li.s-item` markup is gone. Selectors verified against
+// the live www.ebay.com search DOM on 2026-06-03.
+const CARD_SELECTOR = ".su-card-container";
 
-// Watch brands eBay sellers commonly type as the first token. Matched as a prefix so
-// compound brands resolve correctly ("Patek Philippe Nautilus" -> brand="Patek Philippe").
-const COMPOUND_BRANDS = [
+// Known watch brands, longest compound names first, matched as a substring of the
+// title+subtitle. Modern eBay titles often lead with a year/qualifier ("2023 Rolex …"),
+// so a first-word heuristic no longer works.
+const KNOWN_BRANDS = [
   "Patek Philippe",
   "Audemars Piguet",
   "Vacheron Constantin",
   "A. Lange & Söhne",
-  "A. Lange and Sohne",
   "Jaeger-LeCoultre",
+  "Grand Seiko",
   "TAG Heuer",
   "Tag Heuer",
   "Richard Mille",
@@ -28,70 +33,68 @@ const COMPOUND_BRANDS = [
   "Bell & Ross",
   "Ulysse Nardin",
   "Frederique Constant",
-  "Grand Seiko",
+  "Rolex",
+  "Omega",
+  "Tudor",
+  "Cartier",
+  "Breitling",
+  "Panerai",
+  "Hublot",
+  "IWC",
+  "Longines",
+  "Tissot",
+  "Oris",
+  "Hamilton",
+  "Zenith",
+  "Seiko",
 ];
 
 export function parseEbaySearch(doc: Document): EbaySearchCard[] {
-  const cards: HTMLElement[] = Array.from(doc.querySelectorAll<HTMLElement>(CARD_SELECTOR));
+  const cards = Array.from(doc.querySelectorAll<HTMLElement>(CARD_SELECTOR));
   return cards
-    .map((el) => {
-      const titleText = findTitleText(el);
-      if (!titleText) return null;
-      const brand = extractBrand(titleText);
+    .map((el): EbaySearchCard | null => {
+      const title = (el.querySelector(".s-card__title")?.textContent ?? "").trim();
+      // eBay injects a "Shop on eBay" placeholder card with no real listing data.
+      if (!title || /^shop on ebay/i.test(title)) return null;
+      const subtitle = (el.querySelector(".s-card__subtitle")?.textContent ?? "").trim();
+      const brand = extractBrand(`${title} ${subtitle}`);
       if (!brand) return null;
-      const referenceNumber = extractReference(titleText);
+      const referenceNumber = extractReference(title);
       if (!referenceNumber) return null;
+      const { price, currency } = parsePriceAndCurrency(
+        el.querySelector(".s-card__price")?.textContent ?? "",
+      );
       return {
         listingElement: el,
         brand,
-        model: extractModel(titleText, brand),
+        model: extractModel(title, brand),
         referenceNumber,
-        listedPriceUsd: extractPrice(el),
+        listedPrice: price,
+        listedCurrency: currency,
       };
     })
-    .filter((c) => c !== null) as EbaySearchCard[];
+    .filter((c): c is EbaySearchCard => c !== null);
 }
 
-function findTitleText(el: HTMLElement): string | null {
-  const titleNode = el.querySelector(".s-item__title");
-  if (!titleNode) return null;
-  // eBay's placeholder card uses the same .s-item__title shell with text "Shop on eBay" or
-  // similar marketing copy. Strip whitespace and reject if it doesn't look like a listing.
-  const raw = titleNode.textContent?.trim() ?? "";
-  if (!raw || /^(shop on ebay|new listing)$/i.test(raw)) return null;
-  // Some titles are prefixed with "NEW LISTING" in a separate span; trim it.
-  return raw.replace(/^new\s+listing\s*/i, "").trim();
-}
-
-function extractBrand(title: string): string | null {
-  for (const compound of COMPOUND_BRANDS) {
-    if (title.startsWith(compound)) return compound;
+function extractBrand(text: string): string | null {
+  for (const b of KNOWN_BRANDS) {
+    if (text.includes(b)) return b;
   }
-  // First word, stripping a leading "Vintage" / "Authentic" qualifier sellers often prepend.
-  const cleaned = title.replace(/^(vintage|authentic|genuine|rare)\s+/i, "");
-  const first = cleaned.split(/\s+/)[0];
-  return first ?? null;
+  return null;
 }
 
 function extractReference(title: string): string | null {
-  // 5-7 digit core with optional 1-4 letter dial-code suffix. Skips 4-digit years (1900-2099)
-  // and short numbers (e.g. case sizes like "40mm"). Same shape as the Chrono24 search parser.
+  // 5-7 digit core with optional 1-4 letter dial-code suffix; skips 4-digit years.
   const m = title.match(/\b([0-9]{5,7}[A-Za-z]{0,4})\b/);
   return m?.[1] ?? null;
 }
 
 function extractModel(title: string, brand: string): string | null {
-  if (!title.startsWith(brand)) return null;
-  const remainder = title.slice(brand.length).trim();
+  const idx = title.indexOf(brand);
+  if (idx < 0) return null;
+  const remainder = title.slice(idx + brand.length).trim();
   if (!remainder) return null;
-  // Strip leading qualifier tokens that aren't model names.
   const cleaned = remainder.replace(/^(date|no-date|vintage|new|unworn|pre-owned)\s+/i, "");
   const first = cleaned.split(/\s+/)[0];
   return first ?? null;
-}
-
-function extractPrice(el: HTMLElement): number | null {
-  const priceText = el.querySelector(".s-item__price")?.textContent ?? "";
-  const m = priceText.replace(/[\s,]/g, "").match(/\$?([0-9]+(?:\.[0-9]{1,2})?)/);
-  return m?.[1] ? Number.parseFloat(m[1]) : null;
 }

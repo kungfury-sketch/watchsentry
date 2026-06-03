@@ -14,9 +14,9 @@ function parseFixture() {
 }
 
 describe("parseEbaySearch", () => {
-  it("returns one card per real .s-item (placeholders excluded)", () => {
+  it("returns one card per real .su-card-container (placeholders excluded)", () => {
     const cards = parseFixture();
-    // 5 real items + 1 placeholder "Shop on eBay" — parser should skip placeholder
+    // 5 real cards + 1 placeholder "Shop on eBay" — parser should skip placeholder
     expect(cards).toHaveLength(5);
   });
 
@@ -39,13 +39,13 @@ describe("parseEbaySearch", () => {
     for (const c of cards) expect(c.model).toBe("Submariner");
   });
 
-  it("parses USD listed price from .s-item__price", () => {
+  it("parses listed price + currency from .s-card__price", () => {
     const cards = parseFixture();
-    expect(cards[0]?.listedPriceUsd).toBe(11499);
-    expect(cards[1]?.listedPriceUsd).toBe(13200);
-    expect(cards[2]?.listedPriceUsd).toBe(18800);
-    expect(cards[3]?.listedPriceUsd).toBe(36950);
-    expect(cards[4]?.listedPriceUsd).toBe(9750);
+    expect(cards[0]).toMatchObject({ listedPrice: 11499, listedCurrency: "USD" });
+    expect(cards[1]).toMatchObject({ listedPrice: 13200, listedCurrency: "USD" });
+    expect(cards[2]).toMatchObject({ listedPrice: 18800, listedCurrency: "USD" });
+    expect(cards[3]).toMatchObject({ listedPrice: 36950, listedCurrency: "USD" });
+    expect(cards[4]).toMatchObject({ listedPrice: 9750, listedCurrency: "USD" });
   });
 
   it("attaches the DOM element so consumers can mount badges", () => {
@@ -59,7 +59,7 @@ describe("parseEbaySearch", () => {
     expect(cards.some((c) => c.referenceNumber === null && c.brand === null)).toBe(false);
   });
 
-  it("returns empty array on a document with no .s-item nodes", () => {
+  it("returns empty array on a document with no .su-card-container nodes", () => {
     const doc = new DOMParser().parseFromString("<html><body></body></html>", "text/html");
     expect(parseEbaySearch(doc)).toEqual([]);
   });
