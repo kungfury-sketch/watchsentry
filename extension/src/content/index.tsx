@@ -4,13 +4,8 @@ import { Badge } from "../components/Badge";
 import { BadgeCompact } from "../components/BadgeCompact";
 import { parseChrono24Listing } from "../parsers/chrono24-listing";
 import { parseChrono24Search } from "../parsers/chrono24-search";
-import { parseCrownAndCaliberListing } from "../parsers/crownandcaliber-listing";
-import { parseCrownAndCaliberSearch } from "../parsers/crownandcaliber-search";
 import { parseEbayListing } from "../parsers/ebay-listing";
 import { parseEbaySearch } from "../parsers/ebay-search";
-import { parseHodinkeeListing } from "../parsers/hodinkee-listing";
-import { parseWatchchartsListing } from "../parsers/watchcharts-listing";
-import { parseWatchchartsSearch } from "../parsers/watchcharts-search";
 import { parseWatchfinderListing } from "../parsers/watchfinder-listing";
 import { parseWatchfinderSearch } from "../parsers/watchfinder-search";
 import { type Settings, getSettings } from "../storage";
@@ -41,9 +36,6 @@ const ANCHOR_SELECTORS: Record<Host, string[]> = {
   chrono24: [".detail-page-price", ".js-detail-page-price-section"],
   ebay: [".x-price-primary", ".x-bin-price", "[itemprop='price']"],
   watchfinder: [".prod-price", ".prod-price-figure"],
-  crownandcaliber: [".product__price", ".price__current"],
-  watchcharts: [".wc-price"],
-  hodinkee: [".product__price", ".price-item--regular"],
 };
 
 // Normalizes whatever price fields a parser produced into the worker payload shape.
@@ -85,12 +77,6 @@ function parseHostListing(host: Host) {
       return parseEbayListing(document);
     case "watchfinder":
       return parseWatchfinderListing(document);
-    case "crownandcaliber":
-      return parseCrownAndCaliberListing(document);
-    case "watchcharts":
-      return parseWatchchartsListing(document);
-    case "hodinkee":
-      return parseHodinkeeListing(document);
   }
 }
 
@@ -102,12 +88,6 @@ function parseHostSearch(host: Host) {
       return parseEbaySearch(document);
     case "watchfinder":
       return parseWatchfinderSearch(document);
-    case "crownandcaliber":
-      return parseCrownAndCaliberSearch(document);
-    case "watchcharts":
-      return parseWatchchartsSearch(document);
-    case "hodinkee":
-      return []; // Hodinkee collection-page support deferred to Phase 1.2.
   }
 }
 

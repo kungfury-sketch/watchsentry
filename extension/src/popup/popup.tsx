@@ -53,7 +53,7 @@ function App() {
       <div class="ws-explainer">
         <h2>How it works</h2>
         <ul>
-          <li>Open any Chrono24 listing or search page.</li>
+          <li>Open any Chrono24, eBay, or Watchfinder listing or search page.</li>
           <li>
             WatchSentry compares the listed price to the median of active eBay listings (90 days).
           </li>
