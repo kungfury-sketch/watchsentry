@@ -1,5 +1,6 @@
 import { markCandidateValidated, pickCandidatesForValidation } from "./discover";
 import { fetchEbaySoldComps, getEbayAppToken } from "./ebay";
+import { FX_CACHE_KEY, fetchEcbRates } from "./fx";
 import type { Env } from "./index";
 import { insertSoldComps, listAllReferences } from "./repo";
 import { promoteCandidate, validateCandidate } from "./validate";
@@ -9,6 +10,18 @@ const CANDIDATES_PER_CRON = 20;
 export async function runDailyRefresh(
   env: Env,
 ): Promise<{ comps: number; refs: number; candidatesPromoted: number; candidatesChecked: number }> {
+  // Refresh USD-based FX rates first so /enrich can convert non-USD listing prices.
+  // Non-fatal and independent of eBay: on failure we keep the last good rates (3-day
+  // TTL is the safety valve) and log it, rather than aborting the whole refresh.
+  try {
+    const rates = await fetchEcbRates();
+    await env.CACHE.put(FX_CACHE_KEY, JSON.stringify(rates), { expirationTtl: 60 * 60 * 24 * 3 });
+  } catch (e) {
+    await env.DB.prepare("INSERT INTO audit_log (event_type, payload_json) VALUES (?, ?)")
+      .bind("cron_fx_error", JSON.stringify({ error: String(e) }))
+      .run();
+  }
+
   const token = await getEbayAppToken(env.EBAY_APP_ID, env.EBAY_CERT_ID);
   const refs = await listAllReferences(env.DB);
   let totalInserted = 0;

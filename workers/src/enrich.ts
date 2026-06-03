@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { ConditionTier } from "./ebay";
 import { type FairValue, computeFairValue } from "./fair-value";
+import { FX_CACHE_KEY, type FxRates, convertToUsd } from "./fx";
 import type { Env } from "./index";
 import { normalizeReferenceCandidates } from "./normalize";
 import { type WatchRef, findReference, getFairValueInputsFor, getModelLevelComps } from "./repo";
@@ -9,7 +10,13 @@ export const enrichRequestSchema = z.object({
   brand: z.string().min(1).max(50),
   reference: z.string().min(1).max(50),
   condition: z.enum(["new", "unworn", "very_good", "good", "fair"]),
+  // Back-compat: older extension builds send the price already in USD.
   listedPriceUsd: z.number().positive().max(10_000_000).optional(),
+  // Newer builds send the raw listing price + its ISO-4217 currency so the
+  // worker can convert to USD before computing the delta (most non-US Chrono24
+  // listings are EUR/GBP/CHF — comparing those against a USD median is wrong).
+  listedPrice: z.number().positive().max(10_000_000).optional(),
+  listedCurrency: z.string().length(3).optional(),
   anonymousId: z.string().uuid().optional(),
   model: z.string().min(1).max(80).optional(),
 });
@@ -92,7 +99,36 @@ export async function touchUser(
   return { count, capped: count > DAILY_ENRICHMENT_CAP };
 }
 
+// Resolves the listing price to USD for delta computation. Prefers an explicit
+// USD price (back-compat); otherwise converts price+currency via the rate table.
+// Returns undefined when conversion isn't possible so the caller omits the delta
+// rather than showing a wrong one.
+export function resolveListedPriceUsd(
+  req: { listedPriceUsd?: number; listedPrice?: number; listedCurrency?: string },
+  rates: FxRates | null,
+): number | undefined {
+  if (req.listedPriceUsd !== undefined) return req.listedPriceUsd;
+  if (req.listedPrice !== undefined && req.listedCurrency) {
+    if (!rates) return undefined;
+    return convertToUsd(req.listedPrice, req.listedCurrency, rates) ?? undefined;
+  }
+  return undefined;
+}
+
+// Env-bound wrapper: reads cached FX rates from KV only when a genuine
+// foreign-currency conversion is needed (USD requests skip the KV read).
+async function resolveListedPriceForEnv(env: Env, req: EnrichRequest): Promise<number | undefined> {
+  if (req.listedPriceUsd !== undefined) return req.listedPriceUsd;
+  if (req.listedPrice === undefined || !req.listedCurrency) return undefined;
+  const rates: FxRates | null =
+    req.listedCurrency.toUpperCase() === "USD"
+      ? { USD: 1 }
+      : await env.CACHE.get<FxRates>(FX_CACHE_KEY, "json");
+  return resolveListedPriceUsd(req, rates);
+}
+
 export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichResponse> {
+  const listedPriceUsd = await resolveListedPriceForEnv(env, req);
   const cacheKey = enrichmentCacheKey({
     brand: req.brand,
     reference: req.reference,
@@ -101,7 +137,7 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
 
   // Cache hits don't count toward the daily cap — the cap protects D1 work, not KV reads.
   const cached = await env.CACHE.get<EnrichResponse>(cacheKey, "json");
-  if (cached) return maybeAttachDelta(cached, req.listedPriceUsd);
+  if (cached) return maybeAttachDelta(cached, listedPriceUsd);
 
   if (req.anonymousId) {
     const u = await touchUser(env.DB, req.anonymousId);
@@ -119,7 +155,7 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
       await env.CACHE.put(cacheKey, JSON.stringify(modelResp), {
         expirationTtl: CACHE_TTL_SECONDS,
       });
-      return maybeAttachDelta(modelResp, req.listedPriceUsd);
+      return maybeAttachDelta(modelResp, listedPriceUsd);
     }
     const resp: EnrichResponse = { status: "unknown_reference" };
     await env.CACHE.put(cacheKey, JSON.stringify(resp), { expirationTtl: CACHE_TTL_SECONDS });
@@ -138,7 +174,7 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
       await env.CACHE.put(cacheKey, JSON.stringify(modelResp), {
         expirationTtl: CACHE_TTL_SECONDS,
       });
-      return maybeAttachDelta(modelResp, req.listedPriceUsd);
+      return maybeAttachDelta(modelResp, listedPriceUsd);
     }
     const resp: EnrichResponse = {
       status: "no_data",
@@ -156,7 +192,7 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
     tierFallback: fallbackUsed,
   };
   await env.CACHE.put(cacheKey, JSON.stringify(resp), { expirationTtl: CACHE_TTL_SECONDS });
-  return maybeAttachDelta(resp, req.listedPriceUsd);
+  return maybeAttachDelta(resp, listedPriceUsd);
 }
 
 // Attempts a model-level fair-value lookup when per-ref data is absent.
