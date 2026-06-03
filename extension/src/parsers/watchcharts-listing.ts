@@ -1,22 +1,26 @@
 import { extractProductFromJsonLd } from "./jsonld";
+import { parsePriceAndCurrency } from "./price";
 
 export type WatchchartsListing = {
   brand: string;
   referenceNumber: string;
   model?: string;
   conditionTier: "new" | "unworn" | "very_good" | "good" | "fair";
-  listedPriceUsd: number | null;
+  listedPrice: number | null;
+  listedCurrency: string | null;
 };
 
 export function parseWatchchartsListing(doc: Document): WatchchartsListing | null {
   const ld = extractProductFromJsonLd(doc);
   if (ld?.brand && ld.reference) {
+    const dom = extractPriceFromDom(doc);
     return {
       brand: ld.brand,
       referenceNumber: ld.reference,
       model: ld.model,
       conditionTier: ld.condition ?? "good",
-      listedPriceUsd: ld.priceUsd ?? extractPriceFromDom(doc),
+      listedPrice: ld.price ?? dom.price,
+      listedCurrency: ld.price != null ? (ld.currency ?? null) : dom.currency,
     };
   }
   return tryDomFallback(doc);
@@ -27,12 +31,14 @@ function tryDomFallback(doc: Document): WatchchartsListing | null {
   const brand = specs.get("brand");
   const ref = specs.get("reference number") ?? specs.get("reference");
   if (!brand || !ref) return null;
+  const dom = extractPriceFromDom(doc);
   return {
     brand,
     referenceNumber: ref,
     model: specs.get("model"),
     conditionTier: mapCondition(specs.get("condition") ?? ""),
-    listedPriceUsd: extractPriceFromDom(doc),
+    listedPrice: dom.price,
+    listedCurrency: dom.currency,
   };
 }
 
@@ -47,10 +53,9 @@ function readSpecsTable(doc: Document): Map<string, string> {
   return out;
 }
 
-function extractPriceFromDom(doc: Document): number | null {
+function extractPriceFromDom(doc: Document): { price: number | null; currency: string | null } {
   const txt = doc.querySelector(".wc-price")?.textContent ?? "";
-  const m = txt.replace(/[\s,]/g, "").match(/\$?([0-9]+(?:\.[0-9]{1,2})?)/);
-  return m?.[1] ? Number.parseFloat(m[1]) : null;
+  return parsePriceAndCurrency(txt);
 }
 
 function mapCondition(c: string): WatchchartsListing["conditionTier"] {

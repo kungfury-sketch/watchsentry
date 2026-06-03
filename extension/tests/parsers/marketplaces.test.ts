@@ -24,7 +24,10 @@ describe("parseWatchfinderListing", () => {
   it("extracts brand", () => expect(result?.brand).toBe("Rolex"));
   it("extracts reference", () => expect(result?.referenceNumber).toBe("116610LN"));
   it("extracts model", () => expect(result?.model).toBe("Submariner"));
-  it("extracts USD price", () => expect(result?.listedPriceUsd).toBe(11800));
+  it("extracts price + currency", () => {
+    expect(result?.listedPrice).toBe(11800);
+    expect(result?.listedCurrency).toBe("USD");
+  });
   it("maps Pre-Owned -> 'good' tier (via JSON-LD UsedCondition)", () =>
     expect(result?.conditionTier).toBe("good"));
 });
@@ -56,7 +59,10 @@ describe("parseCrownAndCaliberListing", () => {
   it("extracts brand", () => expect(result?.brand).toBe("Rolex"));
   it("extracts reference", () => expect(result?.referenceNumber).toBe("116610LN"));
   it("extracts model", () => expect(result?.model).toBe("Submariner"));
-  it("extracts USD price", () => expect(result?.listedPriceUsd).toBe(11250));
+  it("extracts price + currency", () => {
+    expect(result?.listedPrice).toBe(11250);
+    expect(result?.listedCurrency).toBe("USD");
+  });
 });
 
 describe("parseCrownAndCaliberSearch", () => {
@@ -80,7 +86,10 @@ describe("parseWatchchartsListing", () => {
     expect(result?.referenceNumber).toBe("116610LN");
     expect(result?.model).toBe("Submariner");
   });
-  it("extracts USD price", () => expect(result?.listedPriceUsd).toBe(11400));
+  it("extracts price + currency", () => {
+    expect(result?.listedPrice).toBe(11400);
+    expect(result?.listedCurrency).toBe("USD");
+  });
 });
 
 describe("parseWatchchartsSearch", () => {
@@ -101,7 +110,10 @@ describe("parseHodinkeeListing", () => {
     expect(result?.referenceNumber).toBe("116610LN");
     expect(result?.model).toBe("Submariner");
   });
-  it("extracts USD price", () => expect(result?.listedPriceUsd).toBe(12500));
+  it("extracts price + currency", () => {
+    expect(result?.listedPrice).toBe(12500);
+    expect(result?.listedCurrency).toBe("USD");
+  });
   it("returns null on a non-watch product page (no JSON-LD)", () => {
     const doc = asDoc("<html><body><p>About Us</p></body></html>");
     expect(parseHodinkeeListing(doc)).toBeNull();

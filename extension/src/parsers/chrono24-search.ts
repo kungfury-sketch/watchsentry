@@ -1,3 +1,5 @@
+import { parsePriceAndCurrency } from "./price";
+
 export type Chrono24SearchCard = {
   listingElement: HTMLElement;
   brand: string | null;
@@ -96,31 +98,6 @@ function extractReference(el: HTMLElement): string | null {
 function extractCardPrice(el: HTMLElement): { price: number | null; currency: string | null } {
   const priceText = findPriceText(el) ?? el.textContent ?? "";
   return parsePriceAndCurrency(priceText);
-}
-
-// Parses a display price string into a whole-number amount + ISO currency.
-// Chrono24 cards show whole prices (no cents) across locales: "$13,499", "€9,500",
-// "6.800 €", "9 500 €", "CHF 8'500". We detect the currency by symbol/code and strip
-// all grouping separators (comma, dot, space, apostrophe) to recover the integer.
-export function parsePriceAndCurrency(text: string): {
-  price: number | null;
-  currency: string | null;
-} {
-  const currency = detectCurrency(text);
-  const cluster = text.match(/\d[\d.,'’ʼ \s]*\d|\d/);
-  const digits = cluster ? cluster[0].replace(/\D/g, "") : "";
-  const parsed = digits ? Number.parseInt(digits, 10) : null;
-  return { price: parsed && parsed > 0 ? parsed : null, currency };
-}
-
-function detectCurrency(text: string): string | null {
-  if (text.includes("$")) return "USD";
-  if (text.includes("€")) return "EUR";
-  if (text.includes("£")) return "GBP";
-  if (/\bCHF\b|\bFr\.?/.test(text)) return "CHF";
-  if (text.includes("₺") || /\bTL\b/.test(text)) return "TRY";
-  if (text.includes("¥")) return "JPY";
-  return null;
 }
 
 function findTitleText(el: HTMLElement): string | null {

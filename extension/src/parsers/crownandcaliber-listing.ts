@@ -1,22 +1,26 @@
 import { extractProductFromJsonLd } from "./jsonld";
+import { parsePriceAndCurrency } from "./price";
 
 export type CrownAndCaliberListing = {
   brand: string;
   referenceNumber: string;
   model?: string;
   conditionTier: "new" | "unworn" | "very_good" | "good" | "fair";
-  listedPriceUsd: number | null;
+  listedPrice: number | null;
+  listedCurrency: string | null;
 };
 
 export function parseCrownAndCaliberListing(doc: Document): CrownAndCaliberListing | null {
   const ld = extractProductFromJsonLd(doc);
   if (ld?.brand && ld.reference) {
+    const dom = extractPriceFromDom(doc);
     return {
       brand: ld.brand,
       referenceNumber: ld.reference,
       model: ld.model,
       conditionTier: ld.condition ?? "very_good",
-      listedPriceUsd: ld.priceUsd ?? extractPriceFromDom(doc),
+      listedPrice: ld.price ?? dom.price,
+      listedCurrency: ld.price != null ? (ld.currency ?? null) : dom.currency,
     };
   }
   return tryDomFallback(doc);
@@ -27,12 +31,14 @@ function tryDomFallback(doc: Document): CrownAndCaliberListing | null {
   const brand = specs.get("brand");
   const ref = specs.get("reference") ?? specs.get("reference number");
   if (!brand || !ref) return null;
+  const dom = extractPriceFromDom(doc);
   return {
     brand,
     referenceNumber: ref,
     model: specs.get("model"),
     conditionTier: mapCondition(specs.get("condition") ?? ""),
-    listedPriceUsd: extractPriceFromDom(doc),
+    listedPrice: dom.price,
+    listedCurrency: dom.currency,
   };
 }
 
@@ -47,10 +53,9 @@ function readSpecRows(doc: Document): Map<string, string> {
   return out;
 }
 
-function extractPriceFromDom(doc: Document): number | null {
+function extractPriceFromDom(doc: Document): { price: number | null; currency: string | null } {
   const txt = doc.querySelector(".price__current, .product__price")?.textContent ?? "";
-  const m = txt.replace(/[\s,]/g, "").match(/\$?([0-9]+(?:\.[0-9]{1,2})?)/);
-  return m?.[1] ? Number.parseFloat(m[1]) : null;
+  return parsePriceAndCurrency(txt);
 }
 
 function mapCondition(c: string): CrownAndCaliberListing["conditionTier"] {

@@ -8,7 +8,8 @@ export type ProductLd = {
   brand?: string;
   reference?: string;
   model?: string;
-  priceUsd?: number;
+  price?: number;
+  currency?: string;
   condition?: "new" | "unworn" | "very_good" | "good" | "fair";
 };
 
@@ -24,14 +25,16 @@ export function extractProductFromJsonLd(doc: Document): ProductLd | null {
       if (!brand || !reference) continue;
 
       const offer = Array.isArray(product.offers) ? product.offers[0] : product.offers;
-      const priceUsd = offer?.priceCurrency === "USD" ? parsePrice(offer.price) : undefined;
+      const price = parsePrice(offer?.price);
+      const currency = offer?.priceCurrency ? String(offer.priceCurrency) : undefined;
       const condition = mapSchemaCondition(offer?.itemCondition);
 
       return {
         brand: String(brand),
         reference: String(reference),
         model: product.model ? String(product.model) : undefined,
-        priceUsd: priceUsd ?? undefined,
+        price,
+        currency,
         condition,
       };
     } catch {

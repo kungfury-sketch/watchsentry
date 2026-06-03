@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseChrono24Search, parsePriceAndCurrency } from "../../src/parsers/chrono24-search";
+import { parseChrono24Search } from "../../src/parsers/chrono24-search";
+import { parsePriceAndCurrency } from "../../src/parsers/price";
 
 const FIXTURE = readFileSync(
   join(__dirname, "../fixtures/chrono24-search-rolex-submariner.html"),
@@ -79,6 +80,10 @@ describe("parsePriceAndCurrency", () => {
   it("parses pound and Swiss-franc (apostrophe-grouped) prices", () => {
     expect(parsePriceAndCurrency("£12,000")).toEqual({ price: 12000, currency: "GBP" });
     expect(parsePriceAndCurrency("CHF 8'500")).toEqual({ price: 8500, currency: "CHF" });
+  });
+  it("treats a trailing .00 / ,00 as cents, not extra digits", () => {
+    expect(parsePriceAndCurrency("$24,500.00")).toEqual({ price: 24500, currency: "USD" });
+    expect(parsePriceAndCurrency("6.800,00 €")).toEqual({ price: 6800, currency: "EUR" });
   });
   it("returns null price + null currency when there's no number or symbol", () => {
     expect(parsePriceAndCurrency("Price on request")).toEqual({ price: null, currency: null });

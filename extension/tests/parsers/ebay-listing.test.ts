@@ -35,8 +35,9 @@ describe("parseEbayListing — JSON-LD path", () => {
     expect(parse(FIXTURE_JSONLD)?.model).toBe("Submariner");
   });
 
-  it("extracts USD price from JSON-LD offers", () => {
-    expect(parse(FIXTURE_JSONLD)?.listedPriceUsd).toBe(11250);
+  it("extracts price + currency from JSON-LD offers", () => {
+    expect(parse(FIXTURE_JSONLD)?.listedPrice).toBe(11250);
+    expect(parse(FIXTURE_JSONLD)?.listedCurrency).toBe("USD");
   });
 
   it("maps schema.org UsedCondition to 'good' tier", () => {
@@ -62,8 +63,9 @@ describe("parseEbayListing — item-specifics fallback (no JSON-LD)", () => {
     expect(parse(FIXTURE_NO_JSONLD)?.model).toBe("Submariner");
   });
 
-  it("extracts price from the x-price-primary span", () => {
-    expect(parse(FIXTURE_NO_JSONLD)?.listedPriceUsd).toBe(24500);
+  it("extracts price + currency from the x-price-primary span", () => {
+    expect(parse(FIXTURE_NO_JSONLD)?.listedPrice).toBe(24500);
+    expect(parse(FIXTURE_NO_JSONLD)?.listedCurrency).toBe("USD");
   });
 
   it("maps 'Pre-Owned' condition string to 'good' tier", () => {

@@ -1,9 +1,12 @@
+import { parsePriceAndCurrency } from "./price";
+
 export type EbayListing = {
   brand: string;
   referenceNumber: string;
   model?: string;
   conditionTier: "new" | "unworn" | "very_good" | "good" | "fair";
-  listedPriceUsd: number | null;
+  listedPrice: number | null;
+  listedCurrency: string | null;
   listingId?: string;
 };
 
@@ -32,7 +35,8 @@ function tryJsonLd(doc: Document): EbayListing | null {
       if (!brand || !ref) continue;
 
       const offer = Array.isArray(product.offers) ? product.offers[0] : product.offers;
-      const priceUsd = offer?.priceCurrency === "USD" ? parsePrice(offer.price) : null;
+      const listedPrice = parsePrice(offer?.price);
+      const listedCurrency = offer?.priceCurrency ? String(offer.priceCurrency) : null;
       const condition = mapSchemaCondition(offer?.itemCondition);
 
       return {
@@ -40,7 +44,8 @@ function tryJsonLd(doc: Document): EbayListing | null {
         referenceNumber: String(ref),
         model: product.model ? String(product.model) : undefined,
         conditionTier: condition,
-        listedPriceUsd: priceUsd,
+        listedPrice,
+        listedCurrency,
         listingId: product.sku ? String(product.sku) : undefined,
       };
     } catch {
@@ -59,7 +64,7 @@ function tryItemSpecifics(doc: Document): EbayListing | null {
   if (!brand || !ref) return null;
 
   const priceText = doc.querySelector(".x-price-primary")?.textContent ?? "";
-  const listedPriceUsd = parsePrice(priceText);
+  const { price, currency } = parsePriceAndCurrency(priceText);
   const conditionRaw = specifics.get("condition") ?? "";
   const conditionTier = mapStringCondition(conditionRaw);
 
@@ -68,7 +73,8 @@ function tryItemSpecifics(doc: Document): EbayListing | null {
     referenceNumber: ref,
     model: specifics.get("model"),
     conditionTier,
-    listedPriceUsd,
+    listedPrice: price,
+    listedCurrency: currency,
   };
 }
 
