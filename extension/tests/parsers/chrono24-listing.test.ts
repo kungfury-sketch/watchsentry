@@ -81,4 +81,23 @@ describe("parseChrono24Listing", () => {
     expect(r?.listedPrice).toBe(6800);
     expect(r?.listedCurrency).toBe("EUR");
   });
+
+  it("maps an http:// (non-https) schema.org itemCondition (real Chrono24 uses http)", () => {
+    // Verified live 2026-06-03: Chrono24 JSON-LD emits "http://schema.org/UsedCondition".
+    const html = `<!doctype html><html><head><script type="application/ld+json">${JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: "Rolex Submariner",
+      brand: { "@type": "Brand", name: "Rolex" },
+      sku: "5512",
+      offers: {
+        "@type": "Offer",
+        priceCurrency: "USD",
+        price: "8400",
+        itemCondition: "http://schema.org/UsedCondition",
+      },
+    })}</script></head><body></body></html>`;
+    const r = parseChrono24Listing(new DOMParser().parseFromString(html, "text/html"));
+    expect(r?.conditionTier).toBe("good");
+  });
 });

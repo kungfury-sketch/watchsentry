@@ -68,16 +68,12 @@ function parsePriceNumber(raw: unknown): number | null {
 }
 
 function mapSchemaCondition(c: string | undefined): Chrono24Listing["conditionTier"] {
-  switch (c) {
-    case "https://schema.org/NewCondition":
-      return "new";
-    case "https://schema.org/UsedCondition":
-      return "good";
-    case "https://schema.org/RefurbishedCondition":
-      return "very_good";
-    case "https://schema.org/DamagedCondition":
-      return "fair";
-    default:
-      return "very_good"; // Chrono24 default for pre-owned-excellent
-  }
+  // schema.org itemCondition may be http:// OR https:// (Chrono24 uses http) — match on
+  // the condition name, not the exact URL.
+  const s = (c ?? "").toLowerCase();
+  if (s.includes("newcondition")) return "new";
+  if (s.includes("usedcondition")) return "good";
+  if (s.includes("refurbishedcondition")) return "very_good";
+  if (s.includes("damagedcondition")) return "fair";
+  return "very_good"; // Chrono24 default for pre-owned-excellent
 }

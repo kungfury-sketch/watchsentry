@@ -118,18 +118,13 @@ function parsePrice(text: string | undefined): number | null {
 }
 
 function mapSchemaCondition(c: string | undefined): EbayListing["conditionTier"] {
-  switch (c) {
-    case "https://schema.org/NewCondition":
-      return "new";
-    case "https://schema.org/UsedCondition":
-      return "good";
-    case "https://schema.org/RefurbishedCondition":
-      return "very_good";
-    case "https://schema.org/DamagedCondition":
-      return "fair";
-    default:
-      return "good";
-  }
+  // schema.org itemCondition may be http:// OR https:// — match on the condition name.
+  const s = (c ?? "").toLowerCase();
+  if (s.includes("newcondition")) return "new";
+  if (s.includes("usedcondition")) return "good";
+  if (s.includes("refurbishedcondition")) return "very_good";
+  if (s.includes("damagedcondition")) return "fair";
+  return "good";
 }
 
 // Maps eBay's free-text condition strings (from item-specifics) to our tier system.
