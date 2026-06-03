@@ -1158,3 +1158,11 @@ Likely lanes the user will request:
 4. **[autonomous] tests** for cron orchestration + content-script main flow.
 5. **[pre-launch] CF WAF rate-limit** on `/enrich` + `/discover`.
 6. Minor: popup "How it works" still says "Chrono24" only (now 6 marketplaces); `txrz` subdomain → `api.watchsentry.app` before publish.
+
+**Chrono24 live verification (2026-06-03, follow-up) — both parsers PASS; one bug found+fixed:** user re-enabled / saved pages; live Chrono24 **got past Cloudflare this time** (the earlier "Bir dakika" challenge cleared). Verified via Chrome MCP:
+- **Search parser ✓** — model page rendered 73 cards; `.wt-listing-item.js-listing-item.listing-item` selector current; title 100%, price 100%, ref 60% (model-fallback covers the rest). **All 73 prices in USD** — the user's Chrono24 is USD-localized, so the currency fix doesn't change *their* view (correct for EUR/GBP users, harmless here).
+- **Listing parser ✓** — real listing (`submariner--id46137803`, Rolex 5512 $8,400): JSON-LD Product found, brand/sku(ref)/price/currency all extract; mount anchor `.detail-page-price` present.
+- **🐛 Bug found + fixed (`c40c019`):** real Chrono24 JSON-LD uses `http://schema.org/UsedCondition` (http, not https); the parser's https-only `switch` defaulted used watches to the wrong tier. Made `mapSchemaCondition` protocol-agnostic in chrono24-listing.ts + jsonld.ts + ebay-listing.ts. Ext 96→**97**.
+- **Net: the PRIMARY platform (Chrono24) is now live-verified end-to-end and working.** User's saved pages (`C:\omerprojects\*Search for a wristwatch.html` + the 116610 listing) remain available as a backup oracle.
+
+**Verification scoreboard:** ✅ Chrono24 search + listing (live). ✅ eBay search (live, was broken→fixed `0ebf2aa`). ⬜ eBay listing, Watchfinder, Crown&Caliber, WatchCharts, Hodinkee — still unverified on live DOM (next batch).
