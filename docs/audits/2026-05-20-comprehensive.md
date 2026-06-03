@@ -84,7 +84,7 @@ npm run build          → vite v5.4.21 → ✓ built in ~250ms
 - **CORS headers verified:** OPTIONS preflight → 204 + `Access-Control-Allow-Origin: *` + `Access-Control-Allow-Methods: GET,POST,OPTIONS` + `Access-Control-Max-Age: 86400`
 - **Cron trigger:** `0 4 * * *` (4 AM UTC daily) — registered in `wrangler.toml`
 - **Account:** `kungfurry` (shared with texturize.app, floorplangen.com, texturize.org per memory)
-- **CF dashboard author metadata:** `cil.omerr@gmail.com` (internal-only, not on any public surface — known awareness item in anonymity audit)
+- **CF dashboard author metadata:** `<cf-account-email-redacted>` (internal-only, not on any public surface — known awareness item in anonymity audit)
 
 ### D1 (`watchsentry-db`)
 
@@ -347,7 +347,7 @@ From `docs/anonymity-audit.md` audit-debt table and `progress/session-log.md`:
 | `workers_dev = true` + `preview_urls = true` are implicit defaults | Open. Make explicit; consider setting `preview_urls = false` to reduce attack surface. |
 | `*.workers.dev` subdomain `txrz` is account-level | Open. Cut over to `api.watchsentry.app` custom route. |
 | Landing-page CTA placeholder ("Coming soon to Chrome Web Store") | Open. Update with real CWS detail URL after submission lands. |
-| CF Worker deployment author metadata shows `cil.omerr@gmail.com` | Awareness only. Internal dashboard data; never exposed publicly. No action. |
+| CF Worker deployment author metadata shows `<cf-account-email-redacted>` | Awareness only. Internal dashboard data; never exposed publicly. No action. |
 | npm-audit dev-only vulns (17 total) | Defer to Phase 1; tracked here. |
 
 ---

@@ -413,7 +413,7 @@ Unchanged from Session 1 + the four new data-quality items + two new audit-debt 
 3. **First scheduled cron had NOT fired** — expected; next firing 2026-05-20 04:00 UTC. Audit-log only has the manual seed.
 4. **Placeholder icons (1×1, 70 bytes)** — already in audit-debt; replace before CWS submission.
 5. **Landing CTA is placeholder text** — already in audit-debt.
-6. **CF deployment metadata shows `cil.omerr@gmail.com`** — internal dashboard only; logged as awareness item.
+6. **CF deployment metadata shows `<cf-account-email-redacted>`** — internal dashboard only; logged as awareness item.
 
 ### Fixes shipped this session
 
