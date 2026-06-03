@@ -1,70 +1,40 @@
+import { parsePriceAndCurrency } from "./price";
+
 export type WatchfinderSearchCard = {
   listingElement: HTMLElement;
   brand: string | null;
   model: string | null;
   referenceNumber: string | null;
-  listedPriceUsd: number | null;
+  listedPrice: number | null;
+  listedCurrency: string | null;
 };
 
-const COMPOUND_BRANDS = [
-  "Patek Philippe",
-  "Audemars Piguet",
-  "Vacheron Constantin",
-  "Jaeger-LeCoultre",
-  "TAG Heuer",
-  "Tag Heuer",
-  "Bell & Ross",
-  "Grand Seiko",
-  "A. Lange & Söhne",
-];
-
+// Watchfinder search results render each watch as a `.product-card` with dedicated
+// fields: `.card-brand`, `.card-series` (model), `.card-model-number` (reference),
+// `.card-price`. Selectors verified against the live watchfinder.co.uk search DOM on
+// 2026-06-03 (42/42 cards extracted cleanly; prices in GBP).
 export function parseWatchfinderSearch(doc: Document): WatchfinderSearchCard[] {
-  const cards = Array.from(doc.querySelectorAll<HTMLElement>(".prod-tile"));
-  return cards
-    .map((el) => {
-      const titleText = el.querySelector(".prod-tile-name")?.textContent?.trim() ?? "";
-      if (!titleText) return null;
-      const brand = extractBrand(titleText);
-      if (!brand) return null;
-      const referenceNumber = extractReference(el, titleText);
-      if (!referenceNumber) return null;
+  return Array.from(doc.querySelectorAll<HTMLElement>(".product-card"))
+    .map((el): WatchfinderSearchCard | null => {
+      const brand = text(el, ".card-brand");
+      // The model-number field sometimes includes a space before the dial code
+      // ("16610 LV"); collapse it to match the canonical reference format.
+      const ref = text(el, ".card-model-number")?.replace(/\s+/g, "") ?? null;
+      if (!brand || !ref) return null;
+      const { price, currency } = parsePriceAndCurrency(text(el, ".card-price") ?? "");
       return {
         listingElement: el,
         brand,
-        model: extractModel(titleText, brand),
-        referenceNumber,
-        listedPriceUsd: extractPrice(el),
+        model: text(el, ".card-series"),
+        referenceNumber: ref,
+        listedPrice: price,
+        listedCurrency: currency,
       };
     })
-    .filter((c) => c !== null) as WatchfinderSearchCard[];
+    .filter((c): c is WatchfinderSearchCard => c !== null);
 }
 
-function extractBrand(title: string): string | null {
-  for (const compound of COMPOUND_BRANDS) {
-    if (title.startsWith(compound)) return compound;
-  }
-  const first = title.split(/\s+/)[0];
-  return first ?? null;
-}
-
-function extractReference(el: HTMLElement, title: string): string | null {
-  const refLine = el.querySelector(".prod-tile-ref")?.textContent ?? "";
-  const refM = refLine.match(/(?:Ref\.?\s+)?([0-9][A-Za-z0-9./-]{3,})/);
-  if (refM?.[1]) return refM[1];
-  const titleM = title.match(/\b([0-9]{5,7}[A-Za-z]{0,4})\b/);
-  return titleM?.[1] ?? null;
-}
-
-function extractModel(title: string, brand: string): string | null {
-  if (!title.startsWith(brand)) return null;
-  const remainder = title.slice(brand.length).trim();
-  if (!remainder) return null;
-  const first = remainder.split(/\s+/)[0];
-  return first ?? null;
-}
-
-function extractPrice(el: HTMLElement): number | null {
-  const txt = el.querySelector(".prod-tile-price")?.textContent ?? "";
-  const m = txt.replace(/[\s,]/g, "").match(/\$?([0-9]+(?:\.[0-9]{1,2})?)/);
-  return m?.[1] ? Number.parseFloat(m[1]) : null;
+function text(el: HTMLElement, sel: string): string | null {
+  const t = el.querySelector(sel)?.textContent?.trim();
+  return t || null;
 }

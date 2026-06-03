@@ -10,10 +10,33 @@ export type WatchfinderListing = {
   listedCurrency: string | null;
 };
 
+const BRANDS = [
+  "Patek Philippe",
+  "Audemars Piguet",
+  "Jaeger-LeCoultre",
+  "Grand Seiko",
+  "TAG Heuer",
+  "Tag Heuer",
+  "Bell & Ross",
+  "A. Lange & Söhne",
+  "Rolex",
+  "Omega",
+  "Tudor",
+  "Cartier",
+  "Breitling",
+  "IWC",
+  "Panerai",
+  "Hublot",
+  "Longines",
+  "Zenith",
+  "Seiko",
+];
+
 export function parseWatchfinderListing(doc: Document): WatchfinderListing | null {
+  // Prefer JSON-LD when a page happens to carry it.
   const ld = extractProductFromJsonLd(doc);
   if (ld?.brand && ld.reference) {
-    const dom = extractPriceFromDom(doc);
+    const dom = mainPrice(doc);
     return {
       brand: ld.brand,
       referenceNumber: ld.reference,
@@ -23,51 +46,40 @@ export function parseWatchfinderListing(doc: Document): WatchfinderListing | nul
       listedCurrency: ld.price != null ? (ld.currency ?? null) : dom.currency,
     };
   }
-  return tryDomFallback(doc);
+  // Watchfinder product pages carry NO JSON-LD: the main watch's brand/model/reference are
+  // in the <h1> ("Rolex Submariner 16610"); the price is the first compact currency element
+  // that is NOT inside a related `.product-card`. Verified live on watchfinder.co.uk 2026-06-03.
+  return fromHeading(doc);
 }
 
-function tryDomFallback(doc: Document): WatchfinderListing | null {
-  const specs = readDl(doc, ".prod-spec");
-  const brand = specs.get("brand");
-  const ref = specs.get("model number") ?? specs.get("reference") ?? specs.get("reference number");
-  if (!brand || !ref) return null;
-  const dom = extractPriceFromDom(doc);
+function fromHeading(doc: Document): WatchfinderListing | null {
+  const h1 = doc.querySelector("h1")?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+  if (!h1) return null;
+  const brand = BRANDS.find((b) => h1.includes(b));
+  if (!brand) return null;
+  const ref = h1.match(/\b([0-9]{4,7}[A-Za-z]{0,4})\b/)?.[1];
+  if (!ref) return null;
+  const after = h1.slice(h1.indexOf(brand) + brand.length).trim();
+  const model = after.split(/\s+/)[0] || undefined;
+  const { price, currency } = mainPrice(doc);
   return {
     brand,
     referenceNumber: ref,
-    model: specs.get("model"),
-    conditionTier: mapCondition(specs.get("condition") ?? ""),
-    listedPrice: dom.price,
-    listedCurrency: dom.currency,
+    model,
+    conditionTier: "good",
+    listedPrice: price,
+    listedCurrency: currency,
   };
 }
 
-function readDl(doc: Document, selector: string): Map<string, string> {
-  const out = new Map<string, string>();
-  const root = doc.querySelector(selector);
-  if (!root) return out;
-  const dts = Array.from(root.querySelectorAll("dt"));
-  for (const dt of dts) {
-    const dd = dt.nextElementSibling;
-    if (dd?.tagName === "DD") {
-      const k = dt.textContent?.trim().toLowerCase();
-      const v = dd.textContent?.trim();
-      if (k && v) out.set(k, v);
-    }
-  }
-  return out;
-}
-
-function extractPriceFromDom(doc: Document): { price: number | null; currency: string | null } {
-  const txt = doc.querySelector(".prod-price-figure, .prod-price")?.textContent ?? "";
-  return parsePriceAndCurrency(txt);
-}
-
-function mapCondition(c: string): WatchfinderListing["conditionTier"] {
-  const x = c.toLowerCase();
-  if (/\bnew\b|brand\s+new/.test(x)) return "new";
-  if (/unworn|nos/.test(x)) return "unworn";
-  if (/excellent|mint/.test(x)) return "very_good";
-  if (/pre[-\s]owned|used|good|certified/.test(x)) return "good";
-  return "good";
+// The main listing price: first compact currency element that is NOT inside a related
+// `.product-card` (the page is full of related-watch cards that also show prices).
+function mainPrice(doc: Document): { price: number | null; currency: string | null } {
+  const el = Array.from(doc.querySelectorAll<HTMLElement>("span, strong, b, h2, h3")).find(
+    (e) =>
+      !e.closest(".product-card") &&
+      /[£$€][\d,]{3,}/.test(e.textContent ?? "") &&
+      (e.textContent ?? "").replace(/\s/g, "").length < 16,
+  );
+  return el ? parsePriceAndCurrency(el.textContent ?? "") : { price: null, currency: null };
 }

@@ -24,11 +24,11 @@ describe("parseWatchfinderListing", () => {
   it("extracts brand", () => expect(result?.brand).toBe("Rolex"));
   it("extracts reference", () => expect(result?.referenceNumber).toBe("116610LN"));
   it("extracts model", () => expect(result?.model).toBe("Submariner"));
-  it("extracts price + currency", () => {
+  it("extracts the MAIN price + currency (GBP), ignoring related-watch cards", () => {
     expect(result?.listedPrice).toBe(11800);
-    expect(result?.listedCurrency).toBe("USD");
+    expect(result?.listedCurrency).toBe("GBP");
   });
-  it("maps Pre-Owned -> 'good' tier (via JSON-LD UsedCondition)", () =>
+  it("defaults condition to 'good' (Watchfinder pages carry no condition tier)", () =>
     expect(result?.conditionTier).toBe("good"));
 });
 
@@ -38,18 +38,18 @@ describe("parseWatchfinderSearch", () => {
   it("extracts brand for each card", () => {
     for (const c of cards) expect(c.brand).toBe("Rolex");
   });
-  it("extracts reference from prod-tile-ref line", () => {
+  it("extracts reference from .card-model-number (collapsing the dial-code space)", () => {
     expect(cards[0]?.referenceNumber).toBe("116610LN");
     expect(cards[1]?.referenceNumber).toBe("124060");
     expect(cards[2]?.referenceNumber).toBe("16610LV");
   });
-  it("extracts model = first word after brand", () => {
+  it("extracts model from .card-series", () => {
     for (const c of cards) expect(c.model).toBe("Submariner");
   });
-  it("parses USD price", () => {
-    expect(cards[0]?.listedPriceUsd).toBe(11500);
-    expect(cards[1]?.listedPriceUsd).toBe(13250);
-    expect(cards[2]?.listedPriceUsd).toBe(18900);
+  it("parses price + currency (GBP)", () => {
+    expect(cards[0]).toMatchObject({ listedPrice: 11500, listedCurrency: "GBP" });
+    expect(cards[1]).toMatchObject({ listedPrice: 13250, listedCurrency: "GBP" });
+    expect(cards[2]).toMatchObject({ listedPrice: 18900, listedCurrency: "GBP" });
   });
 });
 

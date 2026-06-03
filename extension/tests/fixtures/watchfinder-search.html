@@ -1,25 +1,35 @@
 <!doctype html>
+<!--
+  Structure captured from the live watchfinder.co.uk search DOM on 2026-06-03:
+  `.product-card` with dedicated `.card-brand` / `.card-series` / `.card-model-number` /
+  `.card-price` fields. Prices are GBP. The 3rd card uses "16610 LV" (with a space) to
+  exercise the dial-code space-collapse.
+-->
 <html lang="en">
-<head>
-<title>Rolex Submariner - Watchfinder (synthetic fixture)</title>
-</head>
-<body>
-<ul class="prod-list">
-  <li class="prod-tile" data-prod-id="wf-001">
-    <a href="/W/Item/wf-001"><h2 class="prod-tile-name">Rolex Submariner Date 116610LN</h2></a>
-    <p class="prod-tile-ref">Ref 116610LN</p>
-    <p class="prod-tile-price">$11,500</p>
-  </li>
-  <li class="prod-tile" data-prod-id="wf-002">
-    <a href="/W/Item/wf-002"><h2 class="prod-tile-name">Rolex Submariner 124060 No-Date</h2></a>
-    <p class="prod-tile-ref">Ref 124060</p>
-    <p class="prod-tile-price">$13,250</p>
-  </li>
-  <li class="prod-tile" data-prod-id="wf-003">
-    <a href="/W/Item/wf-003"><h2 class="prod-tile-name">Rolex Submariner 16610LV Kermit</h2></a>
-    <p class="prod-tile-ref">Ref 16610LV</p>
-    <p class="prod-tile-price">$18,900</p>
-  </li>
-</ul>
-</body>
+  <head><title>Rolex Submariner - Watchfinder</title></head>
+  <body>
+    <div class="results">
+      <div class="product-card large">
+        <div class="card-brand">Rolex</div>
+        <div class="card-series weight-strong truncate">Submariner</div>
+        <div class="card-model-number truncate">116610LN</div>
+        <span class="card-year">Year</span><span>2021</span>
+        <span class="card-price weight-strong right-spaced">£11,500</span>
+      </div>
+      <div class="product-card large">
+        <div class="card-brand">Rolex</div>
+        <div class="card-series weight-strong truncate">Submariner</div>
+        <div class="card-model-number truncate">124060</div>
+        <span class="card-year">Year</span><span>2024</span>
+        <span class="card-price weight-strong right-spaced">£13,250</span>
+      </div>
+      <div class="product-card large">
+        <div class="card-brand">Rolex</div>
+        <div class="card-series weight-strong truncate">Submariner</div>
+        <div class="card-model-number truncate">16610 LV</div>
+        <span class="card-year">Year</span><span>2008</span>
+        <span class="card-price weight-strong right-spaced">£18,900</span>
+      </div>
+    </div>
+  </body>
 </html>
