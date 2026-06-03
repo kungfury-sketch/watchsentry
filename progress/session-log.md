@@ -1092,3 +1092,30 @@ Likely lanes the user will request:
 3. **Cron at 04:00 UTC** should have run by next session — verify `audit_log` for `cron_ebay_refresh_done` with `candidatesChecked` + `candidatesPromoted` counts. Expect first-time sold_comps backfill for 165 newly-seeded refs.
 4. **Hodinkee Shop collection-page parser** still deferred.
 5. **CWS listing-copy update** to reflect multi-platform when submission moment arrives.
+
+---
+
+## Session 12 — Currency-aware fair-value delta (2026-06-03)
+
+**Triggered by:** user returned after ~11 days away ("not that free; improve the product in the meantime — what do you think?"). Recalled full context, verified live state, picked the highest-value autonomous fix.
+
+**Live-state check at session start (read-only, $0):**
+- Worker `b8fd8026` healthy; `/enrich` Omega normalize+model-fallback → `$6,300 / 144 comps / tierFallback`.
+- **Cron ran every day during the absence** — `audit_log` `cron_ebay_refresh_done` daily through 2026-06-03 04:06 UTC. D1: 46,773 sold_comps / 321 refs / 14 users / 1 candidate_ref.
+- `candidatesChecked: 0` nightly — discovery queue empty (no published extension = no traffic). Expected, not a bug.
+
+**Problem found (confirmed in code, not just the plan):** the badge silently dropped its delta verdict on every non-USD listing. Chrono24 parser kept a price only when `priceCurrency === "USD"` (null otherwise); worker `maybeAttachDelta` then attached no delta. So the entire European/UK/Swiss market — and the user's own Turkey-localized Chrono24 (EUR/TRY) — saw a fair-value number with no over/under-priced judgment, the product's core value.
+
+**Fix shipped (TDD, RED→GREEN throughout):**
+- **Worker** (`8d5b09b`): new `fx.ts` — `convertToUsd(amount, currency, rates)` (foreign-units-per-USD table; USD passthrough; null on unknown/zero-rate/junk) + `fetchEcbRates()` (frankfurter.app ECB rates, free/no-key/no-PII, injects USD:1). `/enrich` schema accepts `listedPrice` + `listedCurrency` (3-letter ISO); `listedPriceUsd` kept for back-compat. New pure `resolveListedPriceUsd(req, rates)` — prefers explicit USD, else converts, returns undefined when rates cold or currency unknown (no fake delta). `enrich()` reads cached rates from KV only when a foreign conversion is actually needed. Cron refreshes the USD rate table into KV (`fx:rates:usd`, 3-day TTL safety valve) as a non-fatal first phase (`cron_fx_error` on failure). Workers 86 → **102** tests (+16).
+- **Extension** (`0f8cc12`): Chrono24 listing + search parsers emit `listedPrice` + `listedCurrency` (any currency) instead of USD-only. New exported `parsePriceAndCurrency(text)` handles `$13,499` / `€9,500` / `6.800 €` / `9 500 €` / `£12,000` / `CHF 8'500` (symbol detection + strip-all-separators integer; whole-price assumption for watch cards). `client.ts` payload + content `priceFields()` helper forward both fields (parser union is structurally assignable). Dropped the unused `listedPriceUsd` Badge prop. Extension 90 → **95** tests (+5).
+
+**Verification (evidence, not claim):** Workers typecheck+lint clean, 102/102. Extension typecheck+lint+build clean (251 ms), 95/95. Anonymity grep on all changed files: clean. Both commits pushed to origin/main (no `Co-Authored-By`) — `79dddd0..0f8cc12`.
+
+**Cost surface:** $0 (code + read-only checks only). **NOT deployed** — `wrangler deploy` is gated on user approval per `[[feedback-no-cost-without-asking]]`.
+
+**Blockers / next-session entry point:**
+1. **Deploy decision (USER):** `wrangler deploy` the worker to activate FX conversion + the cron FX phase. After deploy, warm KV once so EUR/GBP deltas work immediately (else they wait for the next 04:00 UTC cron): manually `fetchEcbRates`→`CACHE.put fx:rates:usd`, or trigger the cron. Then reload the unpacked extension. **No deploy done autonomously.**
+2. Post-deploy: live-verify a EUR/TRY Chrono24 listing now renders a delta (needs Chrome MCP scope re-grant — still blocked — or user saves a real page).
+3. Same one-line currency fix still owed to eBay / Watchfinder / Crown&Caliber / WatchCharts parsers (USD-only gate in `parsers/jsonld.ts:27` + `parsers/ebay-listing.ts:35`) — deferred since those 5 are unverified against live DOM anyway.
+4. Carryover from S11: real-page fixture capture for the 5 newer marketplaces; CWS submission whenever the user chooses.
