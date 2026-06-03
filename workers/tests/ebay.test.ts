@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchEbaySoldComps, normalizeCondition } from "../src/ebay";
+import { conditionFromTitle, fetchEbaySoldComps, normalizeCondition } from "../src/ebay";
 
 describe("normalizeCondition", () => {
   it("maps NEW to 'new'", () => {
@@ -74,6 +74,31 @@ describe("fetchEbaySoldComps", () => {
     expect(comps.map((c) => c.sourceListingId)).toEqual(["b"]);
   });
 
+  it("derives condition from the title when eBay omits the structured condition", async () => {
+    const mockFetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            itemSummaries: [
+              {
+                itemId: "u",
+                title: "Rolex Submariner 126610LN Unworn 2024 Full Set",
+                price: { value: "15000", currency: "USD" },
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+    );
+    const comps = await fetchEbaySoldComps({
+      brand: "Rolex",
+      reference: "126610LN",
+      token: "t",
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    });
+    expect(comps[0]?.conditionTier).toBe("unworn");
+  });
+
   it("throws on non-ok response", async () => {
     const mockFetch = vi.fn(async () => new Response("rate limited", { status: 429 }));
     await expect(
@@ -84,5 +109,29 @@ describe("fetchEbaySoldComps", () => {
         fetchImpl: mockFetch as unknown as typeof fetch,
       }),
     ).rejects.toThrow(/eBay search error/);
+  });
+});
+
+describe("conditionFromTitle", () => {
+  it("classifies unworn / new-old-stock titles as 'unworn'", () => {
+    expect(conditionFromTitle("Rolex Submariner 126610LN Unworn 2024 Full Set")).toBe("unworn");
+    expect(conditionFromTitle("Omega Speedmaster New Old Stock NOS")).toBe("unworn");
+  });
+  it("classifies brand-new / BNIB titles as 'new'", () => {
+    expect(conditionFromTitle("Tudor Black Bay 58 Brand New BNIB Sealed")).toBe("new");
+  });
+  it("classifies 'mint condition' / 'like new' as 'very_good'", () => {
+    expect(conditionFromTitle("Rolex GMT-Master II 126710BLRO Mint Condition")).toBe("very_good");
+    expect(conditionFromTitle("Cartier Santos Like New box & papers")).toBe("very_good");
+  });
+  it("does NOT read a 'mint green dial' colour as the condition 'mint' (false-positive guard)", () => {
+    expect(conditionFromTitle("Rolex Submariner 126610LV Mint Green Dial")).toBeNull();
+  });
+  it("classifies pre-owned / used titles as 'good'", () => {
+    expect(conditionFromTitle("Omega Seamaster 300M Pre-Owned Serviced")).toBe("good");
+  });
+  it("returns null when the title carries no condition signal", () => {
+    expect(conditionFromTitle("Rolex Submariner Date 126610LN")).toBeNull();
+    expect(conditionFromTitle(undefined)).toBeNull();
   });
 });

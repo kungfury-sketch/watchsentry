@@ -26,6 +26,23 @@ export function normalizeCondition(ebayCondition: string): ConditionTier {
   }
 }
 
+// Derives a condition tier from an eBay listing title, used when eBay omits the
+// structured `condition` field (common for watches). Returns null when the title has no
+// clear signal so the caller can fall back conservatively. Requires condition-context
+// phrases ("mint condition", not a bare "mint" that may describe a dial colour).
+export function conditionFromTitle(title: string | undefined): ConditionTier | null {
+  if (!title) return null;
+  const t = title.toLowerCase();
+  if (/\b(brand new|bnib|new in box|factory sealed)\b/.test(t)) return "new";
+  if (/\b(unworn|new old stock|nos|deadstock|new other)\b/.test(t)) return "unworn";
+  if (/\b(mint condition|like new|near mint|excellent condition|pristine|immaculate)\b/.test(t)) {
+    return "very_good";
+  }
+  if (/\b(pre[\s-]?owned|gently used|good condition|serviced|used)\b/.test(t)) return "good";
+  if (/\b(well worn|heavily worn|patina|scratched|scratches)\b/.test(t)) return "fair";
+  return null;
+}
+
 export async function getEbayAppToken(
   appId: string,
   certId: string,
@@ -76,7 +93,11 @@ export async function fetchEbaySoldComps(args: {
     .map((i) => ({
       sourceListingId: i.itemId,
       soldPriceUsd: Number.parseFloat(i.price.value),
-      conditionTier: normalizeCondition(i.condition ?? "fair"),
+      // eBay rarely returns a structured condition for watches; when it's absent, derive
+      // the tier from the title so comps don't all collapse to "fair".
+      conditionTier: i.condition
+        ? normalizeCondition(i.condition)
+        : (conditionFromTitle(i.title) ?? "fair"),
       soldAt: i.itemEndDate ?? new Date().toISOString(),
     }));
 }
