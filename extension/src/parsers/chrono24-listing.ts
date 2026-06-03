@@ -3,7 +3,8 @@ export type Chrono24Listing = {
   referenceNumber: string;
   model?: string;
   conditionTier: "new" | "unworn" | "very_good" | "good" | "fair";
-  listedPriceUsd: number | null;
+  listedPrice: number | null;
+  listedCurrency: string | null;
   sellerId?: string;
   listingId?: string;
 };
@@ -23,7 +24,8 @@ export function parseChrono24Listing(doc: Document): Chrono24Listing | null {
       if (!brand || !sku) continue;
 
       const offer = Array.isArray(product.offers) ? product.offers[0] : product.offers;
-      const priceUsd = offer?.priceCurrency === "USD" ? Number.parseFloat(offer.price) : null;
+      const listedPrice = parsePriceNumber(offer?.price);
+      const listedCurrency = offer?.priceCurrency ? String(offer.priceCurrency) : null;
 
       const condition = mapSchemaCondition(offer?.itemCondition);
 
@@ -32,7 +34,8 @@ export function parseChrono24Listing(doc: Document): Chrono24Listing | null {
         referenceNumber: String(sku),
         model: product.model ? String(product.model) : undefined,
         conditionTier: condition,
-        listedPriceUsd: priceUsd,
+        listedPrice,
+        listedCurrency,
         listingId: product.productID ? String(product.productID) : undefined,
       };
     } catch {
@@ -54,6 +57,14 @@ function findProduct(node: any): any | null {
     }
   }
   return null;
+}
+
+// Parses a JSON-LD price (schema.org uses a machine-readable number: '.' decimal,
+// no thousands separators) into a positive number, or null when absent/invalid.
+function parsePriceNumber(raw: unknown): number | null {
+  const n =
+    typeof raw === "number" ? raw : typeof raw === "string" ? Number.parseFloat(raw) : Number.NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 function mapSchemaCondition(c: string | undefined): Chrono24Listing["conditionTier"] {

@@ -46,6 +46,23 @@ const ANCHOR_SELECTORS: Record<Host, string[]> = {
   hodinkee: [".product__price", ".price-item--regular"],
 };
 
+// Normalizes whatever price fields a parser produced into the worker payload shape.
+// Chrono24 parsers emit listedPrice + listedCurrency (currency-aware); the other
+// marketplaces still emit listedPriceUsd. The union is structurally assignable here
+// because every field is optional. The worker prefers listedPriceUsd, else converts
+// listedPrice via the requested currency.
+function priceFields(p: {
+  listedPriceUsd?: number | null;
+  listedPrice?: number | null;
+  listedCurrency?: string | null;
+}): { listedPriceUsd?: number; listedPrice?: number; listedCurrency?: string } {
+  return {
+    listedPriceUsd: p.listedPriceUsd ?? undefined,
+    listedPrice: p.listedPrice ?? undefined,
+    listedCurrency: p.listedCurrency ?? undefined,
+  };
+}
+
 function injectListingMountPoint(host: Host): HTMLElement {
   const mount = document.createElement("div");
   mount.id = "watchsentry-mount";
@@ -110,7 +127,7 @@ async function runListing(settings: Settings, host: Host) {
       brand: parsed.brand,
       reference: parsed.referenceNumber,
       condition: parsed.conditionTier,
-      listedPriceUsd: parsed.listedPriceUsd ?? undefined,
+      ...priceFields(parsed),
       anonymousId: settings.anonymousId,
       model: parsed.model,
     };
@@ -127,7 +144,6 @@ async function runListing(settings: Settings, host: Host) {
       <Badge
         status={enriched.status}
         medianUsd={enriched.fairValue?.medianUsd}
-        listedPriceUsd={parsed.listedPriceUsd ?? undefined}
         sampleSize={enriched.fairValue?.sampleSize}
         deltaPercent={enriched.delta?.percent}
       />,
@@ -157,7 +173,7 @@ async function runSearch(settings: Settings, host: Host) {
           brand: card.brand,
           reference: card.referenceNumber,
           condition: "very_good",
-          listedPriceUsd: card.listedPriceUsd ?? undefined,
+          ...priceFields(card),
           anonymousId: settings.anonymousId,
           model: card.model ?? undefined,
         },

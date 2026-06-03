@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseChrono24Search } from "../../src/parsers/chrono24-search";
+import { parseChrono24Search, parsePriceAndCurrency } from "../../src/parsers/chrono24-search";
 
 const FIXTURE = readFileSync(
   join(__dirname, "../fixtures/chrono24-search-rolex-submariner.html"),
@@ -40,14 +40,14 @@ describe("parseChrono24Search", () => {
     expect(cards[5]?.referenceNumber).toBe("126610LN");
   });
 
-  it("parses listed price in USD; non-USD currencies fall back to the parsed number", () => {
+  it("parses listed price + currency for each card", () => {
     const cards = parseFixture();
-    expect(cards[0]?.listedPriceUsd).toBe(13499);
-    expect(cards[1]?.listedPriceUsd).toBe(10250);
-    expect(cards[2]?.listedPriceUsd).toBe(18000);
-    expect(typeof cards[3]?.listedPriceUsd).toBe("number");
-    expect(cards[4]?.listedPriceUsd).toBe(14170);
-    expect(cards[5]?.listedPriceUsd).toBe(13074);
+    expect(cards[0]).toMatchObject({ listedPrice: 13499, listedCurrency: "USD" });
+    expect(cards[1]).toMatchObject({ listedPrice: 10250, listedCurrency: "USD" });
+    expect(cards[2]).toMatchObject({ listedPrice: 18000, listedCurrency: "USD" });
+    expect(cards[3]).toMatchObject({ listedPrice: 9500, listedCurrency: "EUR" });
+    expect(cards[4]).toMatchObject({ listedPrice: 14170, listedCurrency: "USD" });
+    expect(cards[5]).toMatchObject({ listedPrice: 13074, listedCurrency: "USD" });
   });
 
   it("attaches the DOM element so consumers can mount badges", () => {
@@ -64,5 +64,23 @@ describe("parseChrono24Search", () => {
     expect(cards[3]?.model).toBe("Submariner");
     expect(cards[4]?.model).toBe("Submariner");
     expect(cards[5]?.model).toBe("Submariner");
+  });
+});
+
+describe("parsePriceAndCurrency", () => {
+  it("parses US-formatted dollar prices", () => {
+    expect(parsePriceAndCurrency("$13,499")).toEqual({ price: 13499, currency: "USD" });
+  });
+  it("parses euro prices in both US- and European-style thousands separators", () => {
+    expect(parsePriceAndCurrency("€9,500")).toEqual({ price: 9500, currency: "EUR" });
+    expect(parsePriceAndCurrency("6.800 €")).toEqual({ price: 6800, currency: "EUR" });
+    expect(parsePriceAndCurrency("9 500 €")).toEqual({ price: 9500, currency: "EUR" });
+  });
+  it("parses pound and Swiss-franc (apostrophe-grouped) prices", () => {
+    expect(parsePriceAndCurrency("£12,000")).toEqual({ price: 12000, currency: "GBP" });
+    expect(parsePriceAndCurrency("CHF 8'500")).toEqual({ price: 8500, currency: "CHF" });
+  });
+  it("returns null price + null currency when there's no number or symbol", () => {
+    expect(parsePriceAndCurrency("Price on request")).toEqual({ price: null, currency: null });
   });
 });

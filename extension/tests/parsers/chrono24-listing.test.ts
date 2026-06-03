@@ -19,10 +19,11 @@ describe("parseChrono24Listing", () => {
     const r = parseChrono24Listing(doc);
     expect(r?.referenceNumber).toBe("124060");
   });
-  it("extracts a USD price", () => {
+  it("extracts the listing price and its currency", () => {
     const doc = new DOMParser().parseFromString(FIXTURE, "text/html");
     const r = parseChrono24Listing(doc);
-    expect(r?.listedPriceUsd).toBeGreaterThan(0);
+    expect(r?.listedPrice).toBeGreaterThan(0);
+    expect(r?.listedCurrency).toBe("USD");
   });
   it("returns null on a page that isn't a listing", () => {
     const doc = new DOMParser().parseFromString(
@@ -57,7 +58,27 @@ describe("parseChrono24Listing", () => {
     const r = parseChrono24Listing(doc);
     expect(r?.brand).toBe("Rolex");
     expect(r?.referenceNumber).toBe("124060");
-    expect(r?.listedPriceUsd).toBe(11590);
+    expect(r?.listedPrice).toBe(11590);
+    expect(r?.listedCurrency).toBe("USD");
     expect(r?.listingId).toBe("graphed-listing-id");
+  });
+
+  it("extracts a non-USD price with its currency (previously dropped to null)", () => {
+    // This is the core fix: a EUR listing must keep its price + currency so the worker
+    // can convert and still show a delta, instead of silently rendering no verdict.
+    const eurHtml = `<!doctype html><html><head><script type="application/ld+json">${JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: "Omega Speedmaster",
+        brand: { "@type": "Brand", name: "Omega" },
+        sku: "310.30.42.50.01.001",
+        offers: { "@type": "Offer", priceCurrency: "EUR", price: "6800" },
+      },
+    )}</script></head><body></body></html>`;
+    const doc = new DOMParser().parseFromString(eurHtml, "text/html");
+    const r = parseChrono24Listing(doc);
+    expect(r?.listedPrice).toBe(6800);
+    expect(r?.listedCurrency).toBe("EUR");
   });
 });

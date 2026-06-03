@@ -11,7 +11,12 @@ export async function enrichListing(
     brand: string;
     reference: string;
     condition: string;
+    // Back-compat: price already in USD.
     listedPriceUsd?: number;
+    // Preferred: raw listing price + its ISO-4217 currency; the worker converts to
+    // USD before computing the delta, so non-USD listings still get a verdict.
+    listedPrice?: number;
+    listedCurrency?: string;
     anonymousId?: string;
     model?: string;
   },

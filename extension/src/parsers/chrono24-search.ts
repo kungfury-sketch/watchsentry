@@ -3,7 +3,8 @@ export type Chrono24SearchCard = {
   brand: string | null;
   model: string | null;
   referenceNumber: string | null;
-  listedPriceUsd: number | null;
+  listedPrice: number | null;
+  listedCurrency: string | null;
 };
 
 // Strict 3-class selector only. Chrono24's responsive layout has additional .wt-listing-item
@@ -37,12 +38,14 @@ export function parseChrono24Search(doc: Document): Chrono24SearchCard[] {
   }
   return cards.map((el) => {
     const brand = extractBrand(el);
+    const { price, currency } = extractCardPrice(el);
     return {
       listingElement: el,
       brand,
       model: extractModel(el, brand),
       referenceNumber: extractReference(el),
-      listedPriceUsd: extractPrice(el),
+      listedPrice: price,
+      listedCurrency: currency,
     };
   });
 }
@@ -90,12 +93,34 @@ function extractReference(el: HTMLElement): string | null {
   return implicit?.[1] ?? null;
 }
 
-function extractPrice(el: HTMLElement): number | null {
+function extractCardPrice(el: HTMLElement): { price: number | null; currency: string | null } {
   const priceText = findPriceText(el) ?? el.textContent ?? "";
-  const usd = priceText.match(/\$\s*([\d,]+(?:\.\d{1,2})?)/);
-  if (usd?.[1]) return Number.parseFloat(usd[1].replace(/,/g, ""));
-  const fallback = priceText.replace(/[\s,]/g, "").match(/([0-9]+(?:\.[0-9]{1,2})?)/);
-  return fallback?.[1] ? Number.parseFloat(fallback[1]) : null;
+  return parsePriceAndCurrency(priceText);
+}
+
+// Parses a display price string into a whole-number amount + ISO currency.
+// Chrono24 cards show whole prices (no cents) across locales: "$13,499", "€9,500",
+// "6.800 €", "9 500 €", "CHF 8'500". We detect the currency by symbol/code and strip
+// all grouping separators (comma, dot, space, apostrophe) to recover the integer.
+export function parsePriceAndCurrency(text: string): {
+  price: number | null;
+  currency: string | null;
+} {
+  const currency = detectCurrency(text);
+  const cluster = text.match(/\d[\d.,'’ʼ \s]*\d|\d/);
+  const digits = cluster ? cluster[0].replace(/\D/g, "") : "";
+  const parsed = digits ? Number.parseInt(digits, 10) : null;
+  return { price: parsed && parsed > 0 ? parsed : null, currency };
+}
+
+function detectCurrency(text: string): string | null {
+  if (text.includes("$")) return "USD";
+  if (text.includes("€")) return "EUR";
+  if (text.includes("£")) return "GBP";
+  if (/\bCHF\b|\bFr\.?/.test(text)) return "CHF";
+  if (text.includes("₺") || /\bTL\b/.test(text)) return "TRY";
+  if (text.includes("¥")) return "JPY";
+  return null;
 }
 
 function findTitleText(el: HTMLElement): string | null {
