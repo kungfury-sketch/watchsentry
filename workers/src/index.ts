@@ -51,6 +51,15 @@ app.post("/discover", async (c) => {
 export default {
   fetch: app.fetch,
   scheduled: async (_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) => {
-    await runDailyRefresh(env);
+    try {
+      await runDailyRefresh(env);
+    } catch (e) {
+      // Last-resort guard: record an unexpected scheduled failure with context instead of
+      // letting it surface as only a generic platform cron error. [M6]
+      await env.DB.prepare("INSERT INTO audit_log (event_type, payload_json) VALUES (?, ?)")
+        .bind("cron_fatal_error", JSON.stringify({ error: String(e) }))
+        .run()
+        .catch(() => {});
+    }
   },
 };

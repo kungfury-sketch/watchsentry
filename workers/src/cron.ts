@@ -7,24 +7,45 @@ import { promoteCandidate, validateCandidate } from "./validate";
 
 const CANDIDATES_PER_CRON = 20;
 
+// Best-effort audit log: the cron writes these precisely when D1 may be unhealthy (it's the
+// error path), so a logging failure must never re-throw and abort the refresh. [L6]
+async function logEvent(env: Env, eventType: string, payload: unknown): Promise<void> {
+  try {
+    await env.DB.prepare("INSERT INTO audit_log (event_type, payload_json) VALUES (?, ?)")
+      .bind(eventType, JSON.stringify(payload))
+      .run();
+  } catch {
+    // swallow — logging is best-effort
+  }
+}
+
 export async function runDailyRefresh(
   env: Env,
 ): Promise<{ comps: number; refs: number; candidatesPromoted: number; candidatesChecked: number }> {
+  let totalInserted = 0;
+
   // Refresh USD-based FX rates first so /enrich can convert non-USD listing prices.
-  // Non-fatal and independent of eBay: on failure we keep the last good rates (3-day
+  // Non-fatal and independent of eBay: on failure keep the last good rates (the 3-day KV
   // TTL is the safety valve) and log it, rather than aborting the whole refresh.
   try {
     const rates = await fetchEcbRates();
     await env.CACHE.put(FX_CACHE_KEY, JSON.stringify(rates), { expirationTtl: 60 * 60 * 24 * 3 });
   } catch (e) {
-    await env.DB.prepare("INSERT INTO audit_log (event_type, payload_json) VALUES (?, ?)")
-      .bind("cron_fx_error", JSON.stringify({ error: String(e) }))
-      .run();
+    await logEvent(env, "cron_fx_error", { error: String(e) });
   }
 
-  const token = await getEbayAppToken(env.EBAY_APP_ID, env.EBAY_CERT_ID);
+  // A token failure (eBay down, throttled, or the documented OAuth-scope degradation) must
+  // not take down the entire scheduled run — FX is already refreshed. Log and bail out of
+  // the eBay phase gracefully. [M6]
+  let token: string;
+  try {
+    token = await getEbayAppToken(env.EBAY_APP_ID, env.EBAY_CERT_ID);
+  } catch (e) {
+    await logEvent(env, "cron_ebay_token_error", { error: String(e) });
+    return { comps: 0, refs: 0, candidatesPromoted: 0, candidatesChecked: 0 };
+  }
+
   const refs = await listAllReferences(env.DB);
-  let totalInserted = 0;
   for (const r of refs) {
     try {
       const comps = await fetchEbaySoldComps({
@@ -32,13 +53,10 @@ export async function runDailyRefresh(
         reference: r.referenceNumber,
         token,
       });
-      const inserted = await insertSoldComps(env.DB, r.id, comps);
-      totalInserted += inserted;
+      totalInserted += await insertSoldComps(env.DB, r.id, comps);
       await new Promise((res) => setTimeout(res, 300));
     } catch (e) {
-      await env.DB.prepare("INSERT INTO audit_log (event_type, payload_json) VALUES (?, ?)")
-        .bind("cron_ebay_ref_error", JSON.stringify({ refId: r.id, error: String(e) }))
-        .run();
+      await logEvent(env, "cron_ebay_ref_error", { refId: r.id, error: String(e) });
     }
   }
 
@@ -58,8 +76,9 @@ export async function runDailyRefresh(
         reference: c.reference_number,
       });
       if (refId !== null) {
-        await insertSoldComps(env.DB, refId, result.comps);
-        totalInserted += result.comps.length;
+        // Count actual distinct rows written, not the eBay-returned length (which would
+        // also count INSERT OR IGNORE duplicates). [L5]
+        totalInserted += await insertSoldComps(env.DB, refId, result.comps);
         promoted++;
       }
     }
@@ -67,17 +86,12 @@ export async function runDailyRefresh(
     await new Promise((res) => setTimeout(res, 300));
   }
 
-  await env.DB.prepare("INSERT INTO audit_log (event_type, payload_json) VALUES (?, ?)")
-    .bind(
-      "cron_ebay_refresh_done",
-      JSON.stringify({
-        refs: refs.length,
-        inserted: totalInserted,
-        candidatesChecked: candidates.length,
-        candidatesPromoted: promoted,
-      }),
-    )
-    .run();
+  await logEvent(env, "cron_ebay_refresh_done", {
+    refs: refs.length,
+    inserted: totalInserted,
+    candidatesChecked: candidates.length,
+    candidatesPromoted: promoted,
+  });
   return {
     comps: totalInserted,
     refs: refs.length,
