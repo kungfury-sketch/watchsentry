@@ -92,6 +92,9 @@ function parseHostSearch(host: Host) {
 }
 
 async function runListing(settings: Settings, host: Host) {
+  // Idempotent: if a badge is already mounted (e.g. a MutationObserver re-fire on the same
+  // listing), don't inject a second one. SPA route changes remove the stale mount first. [H4]
+  if (document.getElementById("watchsentry-mount")) return;
   const parsed = parseHostListing(host);
   if (!parsed) {
     log.warn(`${host} listing parser returned null`);
@@ -196,12 +199,14 @@ async function processWithConcurrency<T>(
   await Promise.all(runners);
 }
 
-async function main() {
+// Exported for tests; `hostname` is injectable so a test can target a marketplace host
+// without stubbing the global location.
+export async function scan(hostname: string = location.hostname): Promise<void> {
   const settings = await getSettings();
   if (!settings.enabled) return;
 
-  const host = chooseHost(location.hostname);
-  if (!host) return; // off-marketplace page (shouldn't happen under our manifest matches, but defensive)
+  const host = chooseHost(hostname);
+  if (!host) return; // off-marketplace page (defensive; shouldn't happen under our matches)
 
   const route = chooseRoute(document, host);
   if (route === "listing") {
@@ -211,4 +216,39 @@ async function main() {
   }
 }
 
-main();
+// Re-scan on SPA navigation (eBay/Watchfinder are client-side-routed) and on late DOM
+// hydration, so badges appear without a full page load. The idempotency guards in
+// runListing (mount check) and runSearch (.ws-badge-compact check) keep re-scans from
+// duplicating badges. [H4]
+function setupReactiveScan(): void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const debouncedScan = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => void scan(), 600);
+  };
+
+  new MutationObserver(debouncedScan).observe(document.body, { childList: true, subtree: true });
+
+  const onNavigate = () => {
+    // A new route may show a different watch — drop the stale listing badge so scan()
+    // re-injects a fresh one. Search pills live on their cards, which the SPA replaces.
+    document.getElementById("watchsentry-mount")?.remove();
+    debouncedScan();
+  };
+  window.addEventListener("popstate", onNavigate);
+  // pushState/replaceState don't emit popstate — wrap them to catch SPA navigations.
+  for (const method of ["pushState", "replaceState"] as const) {
+    const original = history[method];
+    history[method] = function (this: History, ...args: Parameters<typeof original>) {
+      const result = original.apply(this, args);
+      onNavigate();
+      return result;
+    } as typeof original;
+  }
+}
+
+// Auto-start in the extension; skipped under test, where scan() is driven directly.
+if (import.meta.env?.MODE !== "test") {
+  void scan();
+  setupReactiveScan();
+}
