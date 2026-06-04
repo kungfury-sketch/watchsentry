@@ -15,6 +15,7 @@ vi.mock("../../src/api/client", () => ({
   reportDiscovery: vi.fn(async () => {}),
 }));
 
+import { enrichListing } from "../../src/api/client";
 import { scan } from "../../src/content/index";
 
 const C24_LISTING = readFileSync(
@@ -32,7 +33,14 @@ function loadGlobalDoc(html: string): void {
   document.close();
 }
 
+const OK_ENRICH: Awaited<ReturnType<typeof enrichListing>> = {
+  status: "ok",
+  fairValue: { medianUsd: 12000, sampleSize: 100, windowDays: 90 },
+  delta: { absoluteUsd: -1000, percent: -8.3 },
+};
+
 afterEach(() => {
+  vi.mocked(enrichListing).mockResolvedValue(OK_ENRICH);
   document.open();
   document.write("<!doctype html><html><body></body></html>");
   document.close();
@@ -64,5 +72,13 @@ describe("scan() — search", () => {
     expect(first).toBeGreaterThan(0);
     await scan("www.chrono24.com");
     expect(document.querySelectorAll(".ws-badge-compact").length).toBe(first);
+  });
+
+  it("does not litter cards with empty spans for non-ok results [L7]", async () => {
+    vi.mocked(enrichListing).mockResolvedValue({ status: "no_data" });
+    loadGlobalDoc(C24_SEARCH);
+    await scan("www.chrono24.com");
+    expect(document.querySelectorAll(".ws-badge-compact")).toHaveLength(0);
+    expect(document.querySelectorAll("span:empty")).toHaveLength(0);
   });
 });

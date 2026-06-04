@@ -171,12 +171,13 @@ async function runSearch(settings: Settings, host: Host) {
           { apiBase: API_BASE },
         );
       }
-      const mount = document.createElement("span");
-      card.listingElement.appendChild(mount);
-      render(
-        <BadgeCompact status={enriched.status} deltaPercent={enriched.delta?.percent} />,
-        mount,
-      );
+      // Only mount when BadgeCompact will actually render a pill (ok + a delta). Otherwise
+      // every non-ok card would get an empty <span>. [L7]
+      if (enriched.status === "ok" && enriched.delta?.percent !== undefined) {
+        const mount = document.createElement("span");
+        card.listingElement.appendChild(mount);
+        render(<BadgeCompact status="ok" deltaPercent={enriched.delta.percent} />, mount);
+      }
     } catch {
       // skip single-card failures silently
     }
