@@ -30,16 +30,16 @@ function App() {
         </div>
         <div class="ws-titles">
           <span class="ws-name">WatchSentry</span>
-          <span class="ws-tag">Fair value on every Chrono24 listing</span>
+          <span class="ws-tag">Fair value on every watch listing</span>
         </div>
       </div>
 
       <div class={`ws-status ${enabled ? "ws-on" : "ws-off"}`}>
         <span class="ws-dot" aria-hidden="true" />
         <span class="ws-status-label">
-          {ready ? (enabled ? "Active on Chrono24" : "Paused") : "Loading…"}
+          {ready ? (enabled ? "Active on supported sites" : "Paused") : "Loading…"}
         </span>
-        <label class="ws-toggle" aria-label="Enable on Chrono24">
+        <label class="ws-toggle" aria-label="Enable WatchSentry">
           <input
             type="checkbox"
             checked={enabled}
