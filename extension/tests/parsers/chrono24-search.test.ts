@@ -66,6 +66,28 @@ describe("parseChrono24Search", () => {
     expect(cards[4]?.model).toBe("Submariner");
     expect(cards[5]?.model).toBe("Submariner");
   });
+
+  it("does not fabricate a price from card text when the price node is missing or renamed", () => {
+    // Regression [C1]: if Chrono24 renames the price <p> class, the price lookup must
+    // fail closed (null). It must NOT fall back to the card's full text, where
+    // parsePriceAndCurrency would grab the reference number as a six-figure "price"
+    // and paint a fairly-priced watch bright red.
+    const html = `<!doctype html><html><body>
+      <div class="wt-listing-item js-listing-item listing-item">
+        <p class="text-bold text-ellipsis">Rolex Submariner Date</p>
+        <p class="text-ellipsis">126610LN</p>
+        <p class="price-class-renamed-by-chrono24">$13,499</p>
+      </div>
+    </body></html>`;
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const cards = parseChrono24Search(doc);
+    expect(cards).toHaveLength(1);
+    // Reference still resolves from its dedicated line…
+    expect(cards[0]?.referenceNumber).toBe("126610LN");
+    // …but a missing price node must yield no price, never the reference digits.
+    expect(cards[0]?.listedPrice).toBeNull();
+    expect(cards[0]?.listedCurrency).toBeNull();
+  });
 });
 
 describe("parsePriceAndCurrency", () => {

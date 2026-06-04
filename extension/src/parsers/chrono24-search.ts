@@ -96,7 +96,12 @@ function extractReference(el: HTMLElement): string | null {
 }
 
 function extractCardPrice(el: HTMLElement): { price: number | null; currency: string | null } {
-  const priceText = findPriceText(el) ?? el.textContent ?? "";
+  // Fail closed: only parse the dedicated price node. Falling back to el.textContent
+  // would let parsePriceAndCurrency grab the first digit cluster on the card — which is
+  // the reference number — and emit it as a six-figure price. A missing/renamed price
+  // node must suppress the price (and therefore the delta), never fabricate one. [C1]
+  const priceText = findPriceText(el);
+  if (priceText === null) return { price: null, currency: null };
   return parsePriceAndCurrency(priceText);
 }
 
