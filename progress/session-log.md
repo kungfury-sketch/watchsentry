@@ -1280,3 +1280,11 @@ Per "continue working," also shipped **[H2] per-IP soft daily cap on `/discover`
 - Extension 113→**122**. Extension-only (ships on reload; not published).
 
 **FINAL STATE @ 2026-06-04: 16 commits pushed (origin `9aa4ea6`); worker `168ce1e3` live; landing live; Workers 123 / Ext 122 green.** Audit essentially fully addressed (all High + M2/M3/M6 + L3/L5/L6/L7/L8 + H5). Remaining low-value tail: **[M5]** currency-symbol pairing + **[M7]** host-default currency (fiddly parser-currency edges), repo-SQL assertion tests + hollow-test fixes, **[H2]-deeper** observer-dedup (needs `anonymousId` on discovery). **User-gated:** git-history PII scrub, CWS submission.
+
+### Session 13 — "improve everything more" round (continued; user has lots of time)
+With more runway, finished the correctness tail + hardened tests + a UX win:
+- **[M5]** (`f41de0f`) — `parsePriceAndCurrency` now anchors the amount to the *detected* currency symbol (before/after it), so a dual-price listing ("Was €9,500 now $8,900") no longer reports the € figure mislabeled USD → a wrong delta. Single-price parsing unchanged. +1 test.
+- **Test hardening** (`5d09826`, `9fc075e`) — rewrote the hollow fair-value "weights recent" test (injected `now`; both comps in-window; asserts weighting, not the window filter); added `repo.test.ts` pinning the median queries' SQL shape (90-day window / tier / ORDER / LIMIT / bindings); added `getEbayAppToken` coverage (the credential exchange the whole ingest depends on).
+- **Badge absolute-$ gap** (`5217fe8`) — the listing badge now shows the concrete gap ("−8.4% · $1,150 below") from the worker's `delta.absoluteUsd`, muted so the % stays the headline. +2 tests. Extension-only (ships on reload).
+
+**STATE @ 2026-06-04: 21 commits pushed (origin `9fc075e`); worker `168ce1e3` live (unchanged this round); landing live; Workers 131 / Ext 125 green.** Remaining (minor): **[M7]** host-default currency, **[H2]-deeper** observer-dedup, catalog expansion, ebay-listing condition-branch tests. **User-gated:** git-history PII scrub, CWS submission.
