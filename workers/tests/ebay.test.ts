@@ -3,6 +3,7 @@ import {
   conditionFromTitle,
   fetchEbaySoldComps,
   filterByPriceRange,
+  getEbayAppToken,
   normalizeCondition,
 } from "../src/ebay";
 
@@ -208,5 +209,29 @@ describe("filterByPriceRange", () => {
 
   it("handles an empty list", () => {
     expect(filterByPriceRange([])).toEqual([]);
+  });
+});
+
+describe("getEbayAppToken", () => {
+  it("exchanges client credentials for an access token (Basic auth + client_credentials grant)", async () => {
+    let captured: { url: string; init: RequestInit } | undefined;
+    const mockFetch = vi.fn(async (url: string, init: RequestInit) => {
+      captured = { url, init };
+      return new Response(JSON.stringify({ access_token: "tok-123" }), { status: 200 });
+    });
+    const token = await getEbayAppToken("APPID", "CERTID", mockFetch as unknown as typeof fetch);
+    expect(token).toBe("tok-123");
+    expect(captured?.url).toContain("/identity/v1/oauth2/token");
+    expect(captured?.init.method).toBe("POST");
+    const headers = captured?.init.headers as Record<string, string>;
+    expect(headers.Authorization).toBe(`Basic ${btoa("APPID:CERTID")}`);
+    expect(String(captured?.init.body)).toContain("grant_type=client_credentials");
+  });
+
+  it("throws on a non-ok token response", async () => {
+    const mockFetch = vi.fn(async () => new Response("unauthorized", { status: 401 }));
+    await expect(getEbayAppToken("a", "b", mockFetch as unknown as typeof fetch)).rejects.toThrow(
+      /eBay token error/,
+    );
   });
 });
