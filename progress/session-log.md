@@ -1272,4 +1272,11 @@ Re-verified (clean tree, suites green, `wrangler whoami` healthy — `workers`/`
 ### Session 13 — [H2] shipped (continued)
 Per "continue working," also shipped **[H2] per-IP soft daily cap on `/discover`** (`3911ff1`): KV-backed 100/IP/day keyed on `cf-connecting-ip`; over-cap returns `{ok,throttled}` without recording. +3 tests; Workers 120→**123**. Deployed → worker version **`168ce1e3`**; `/discover` smoke `{ok:true}`.
 
-**✅ ALL audit High findings now shipped + deployed:** C1 (critical, ext), H1 + H2 + H3 (worker, live `168ce1e3`), H4 (ext). Plus M2/M3/M6 + L3/L5/L6/L8. Remaining backlog: deferred parser fixes ([M5]/[H5]/[M7]/[L7], extension-only — multi-file regex risk), repo-SQL tests + hollow-test fixes, [H2]-deeper distinct-observer dedup (needs `anonymousId` on discovery). **User-gated:** git-history PII scrub, CWS submission.
+**✅ ALL audit High findings now shipped + deployed:** C1 (critical, ext), H1 + H2 + H3 (worker, live `168ce1e3`), H4 (ext). Plus M2/M3/M6 + L3/L5/L6/L8.
+
+### Session 13 — [H5] + [L7] shipped (extension parser tail, continued)
+- **[H5]** (`f03a66c`) — new shared `parsers/reference.ts` `extractReferenceFromText` broadens ref matching to **dotted Omega** (311.30.42.30.01.005), **14-digit** Omega, **slashed Patek** (5711/1A-010), and **letter-leading** Cartier/Breitling (WSSA0009, AB0121211B1P1) shapes, in priority order (digit-leading before letter-leading so a real digit ref beats a junk letter token; 2-3-digit dotted groups exclude DD.MM.YYYY dates). Wired into chrono24-search + ebay-search + ebay-listing (replaced duplicated inline regex). +8 tests, **zero regressions** on the ~30 existing parser tests.
+- **[L7]** (`9aa4ea6`) — `runSearch` no longer appends an empty `<span>` for non-ok cards (only mounts when BadgeCompact will render). +1 test.
+- Extension 113→**122**. Extension-only (ships on reload; not published).
+
+**FINAL STATE @ 2026-06-04: 16 commits pushed (origin `9aa4ea6`); worker `168ce1e3` live; landing live; Workers 123 / Ext 122 green.** Audit essentially fully addressed (all High + M2/M3/M6 + L3/L5/L6/L7/L8 + H5). Remaining low-value tail: **[M5]** currency-symbol pairing + **[M7]** host-default currency (fiddly parser-currency edges), repo-SQL assertion tests + hollow-test fixes, **[H2]-deeper** observer-dedup (needs `anonymousId` on discovery). **User-gated:** git-history PII scrub, CWS submission.
