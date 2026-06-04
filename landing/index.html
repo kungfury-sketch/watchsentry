@@ -1,36 +1,161 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WatchSentry — Fair-value protection for watch buyers on Chrono24</title>
-  <meta name="description" content="A Chrome extension that shows fair value, derived from 90-day eBay sold-comps, on every Chrono24 watch listing." />
-  <link rel="stylesheet" href="/styles.css" />
-</head>
-<body>
-  <main>
-    <h1>WatchSentry</h1>
-    <p class="lead">Don't overpay on Chrono24. Fair value on every listing, in your browser.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>WatchSentry — Know a watch's fair value before you buy</title>
+    <meta
+      name="description"
+      content="A free Chrome extension that shows a watch's fair value — the median of active eBay listings over a 90-day window — right on Chrono24, eBay, and Watchfinder listings. No account, no personal data."
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <!-- Reusable shield-check mark, echoing the extension icon. -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="ws-mark" viewBox="0 0 24 24">
+        <path d="M12 1.7 3.7 4.8v6.4c0 5.1 3.5 8.8 8.3 10.4 4.8-1.6 8.3-5.3 8.3-10.4V4.8L12 1.7Z" fill="currentColor" />
+        <path d="M8.2 12.1l2.6 2.6 5-5.2" fill="none" stroke="#10b981" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+    </svg>
 
-    <!-- Replace with chromewebstore.google.com/detail/<id> URL after CWS approval. -->
-    <p>
-      <span class="cta cta-disabled">Coming soon to the Chrome Web Store</span>
-    </p>
+    <header class="hero">
+      <div class="topbar">
+        <div class="wrap">
+          <span class="brand">
+            <svg class="mark" style="color: #fff"><use href="#ws-mark" /></svg>
+            <span class="word">WatchSentry</span>
+          </span>
+          <nav>
+            <a href="#how">How it works</a>
+            <a href="#where">Where it runs</a>
+            <a href="/privacy.html">Privacy</a>
+          </nav>
+        </div>
+      </div>
 
-    <h2>How it works</h2>
-    <p>Open any Chrono24 listing. WatchSentry compares the listed price to a 90-day weighted median of comparable eBay listings and shows whether you're above or below the market. No account needed. No personal data collected.</p>
+      <div class="wrap">
+        <div class="hero-grid">
+          <div>
+            <span class="eyebrow">Buyer-side fair value</span>
+            <h1>Know a watch's <span class="accent">fair value</span> before you buy.</h1>
+            <p class="lead">
+              WatchSentry adds a fair-value badge to luxury-watch listings, so you can see at a
+              glance whether a price is above or below the market — without leaving the page.
+            </p>
+            <div class="cta-row">
+              <span class="cta cta-disabled" role="button" aria-disabled="true">Coming soon to the Chrome Web Store</span>
+              <a class="cta-ghost" href="#how">See how it works ↓</a>
+            </div>
+            <p class="microtrust">
+              <strong>No account.</strong> <strong>No personal data.</strong> Free, and it works
+              entirely in your browser.
+            </p>
+          </div>
 
-    <h2>Roadmap</h2>
-    <ul>
-      <li>Cross-marketplace alternatives</li>
-      <li>Seller risk score</li>
-      <li>Want-list monitor + price alerts</li>
-    </ul>
+          <div class="mock" aria-label="Example of the WatchSentry badge on a listing">
+            <div class="mock-card">
+              <div class="mock-context">
+                <span>Rolex Submariner 126610LN</span>
+                <span class="site">Chrono24 · listed $11,350</span>
+              </div>
+              <div class="ws-badge">
+                <div class="row"><span class="k">Fair value</span><span class="v">$12,400</span></div>
+                <div class="row"><span class="k">Listing vs fair</span><span class="v good">−8.4%</span></div>
+                <div class="foot"><b>WatchSentry</b> · 142 active eBay listings · 90d</div>
+              </div>
+            </div>
+            <p class="mock-caption">A live badge, injected next to the listing price.</p>
+          </div>
+        </div>
+      </div>
+    </header>
 
-    <footer>
-      <p><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="mailto:support@watchsentry.app">support@watchsentry.app</a></p>
-      <p class="fineprint">WatchSentry is an independent tool and is not affiliated with Chrono24, eBay, or any watch brand.</p>
+    <main>
+      <section id="how">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>How it works</h2>
+            <p>Three steps, all on the page you're already looking at. Nothing to configure.</p>
+          </div>
+          <div class="steps">
+            <div class="step">
+              <span class="n">1</span>
+              <h3>Open a listing</h3>
+              <p>Browse any supported watch listing or search page as you normally would.</p>
+            </div>
+            <div class="step">
+              <span class="n">2</span>
+              <h3>We find comparable prices</h3>
+              <p>
+                WatchSentry matches the watch's reference and pulls the median of active eBay
+                listings for it over the last 90 days, converted to your listing's currency.
+              </p>
+            </div>
+            <div class="step">
+              <span class="n">3</span>
+              <h3>You see the gap</h3>
+              <p>
+                A badge shows the listed price versus fair value — green below the market, red
+                above, neutral when it's close.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="where" class="section-soft">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Where it runs</h2>
+            <p>On watch-listing and search pages on these marketplaces only — nowhere else.</p>
+          </div>
+          <div class="chips">
+            <span class="chip"><span class="tick">✓</span> Chrono24</span>
+            <span class="chip"><span class="tick">✓</span> eBay <span class="sub">US · UK · DE</span></span>
+            <span class="chip"><span class="tick">✓</span> Watchfinder <span class="sub">UK · US</span></span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Built for buyers who want the truth</h2>
+            <p>Quiet, private, and honest about what the number means.</p>
+          </div>
+          <div class="trust">
+            <div class="item"><h3>No account</h3><p>Nothing to sign up for. Install and it just works.</p></div>
+            <div class="item"><h3>No personal data</h3><p>No name, email, or IP. Just an anonymous ID for a daily usage cap.</p></div>
+            <div class="item"><h3>Stays out of the way</h3><p>One unobtrusive badge near the price. No pop-ups, no noise.</p></div>
+            <div class="item"><h3>Currency-aware</h3><p>EUR, GBP and CHF listings are converted before the comparison.</p></div>
+          </div>
+          <p class="note" style="margin-top: 36px">
+            <strong>An estimate, not an appraisal.</strong> Fair value is the median of
+            <em>active</em> eBay listings (asking prices) over a 90-day window — a fast market
+            reference, not a sold-price valuation or financial advice. Always verify with an
+            independent professional before a significant purchase.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site">
+      <div class="wrap">
+        <span class="brand">
+          <svg class="mark" style="color: #fff"><use href="#ws-mark" /></svg>
+          <span class="word" style="color: #fff">WatchSentry</span>
+        </span>
+        <span class="links">
+          <a href="/privacy.html">Privacy</a>
+          <a href="/terms.html">Terms</a>
+          <a href="mailto:support@watchsentry.app">support@watchsentry.app</a>
+        </span>
+        <p class="fineprint">
+          WatchSentry is an independent tool and is not affiliated with Chrono24, eBay, Watchfinder,
+          or any watch brand. All trademarks belong to their respective owners.
+        </p>
+      </div>
     </footer>
-  </main>
-</body>
+  </body>
 </html>
