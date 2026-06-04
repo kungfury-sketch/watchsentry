@@ -129,6 +129,21 @@ describe("fetchEbaySoldComps", () => {
     expect(comps).toHaveLength(4);
   });
 
+  it("restricts the query to the Wristwatches category to exclude straps/accessories", async () => {
+    let url = "";
+    const mockFetch = vi.fn(async (u: string) => {
+      url = u;
+      return new Response(JSON.stringify({ itemSummaries: [] }), { status: 200 });
+    });
+    await fetchEbaySoldComps({
+      brand: "Cartier",
+      reference: "WSSA0009",
+      token: "t",
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    });
+    expect(url).toContain("category_ids=31387");
+  });
+
   it("throws on non-ok response", async () => {
     const mockFetch = vi.fn(async () => new Response("rate limited", { status: 429 }));
     await expect(

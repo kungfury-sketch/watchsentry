@@ -91,7 +91,10 @@ export async function fetchEbaySoldComps(args: {
 }): Promise<SoldComp[]> {
   const fetchImpl = args.fetchImpl ?? fetch;
   const q = encodeURIComponent(`${args.brand} ${args.reference}`);
-  const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${q}&filter=conditionIds:{1000|1500|2000|2500|3000|4000|5000|6000},buyingOptions:{FIXED_PRICE}&limit=200`;
+  // Restrict to the Wristwatches category (31387) so straps, bands, boxes and parts that
+  // merely mention the reference number don't pollute the comp set and tank the median —
+  // e.g. "Cartier WSSA0009" otherwise returns accessory listings at $24–$200. [data-quality]
+  const url = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${q}&category_ids=31387&filter=conditionIds:{1000|1500|2000|2500|3000|4000|5000|6000},buyingOptions:{FIXED_PRICE}&limit=200`;
   const res = await fetchImpl(url, {
     headers: {
       Authorization: `Bearer ${args.token}`,
