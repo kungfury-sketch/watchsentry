@@ -41,7 +41,13 @@ describe("<Badge>", () => {
 
   it("shows the absolute dollar gap directionally (below market) in the ok state", () => {
     const { container } = render(
-      <Badge status="ok" medianUsd={12400} sampleSize={142} deltaPercent={-8.4} deltaAbsUsd={-1150} />,
+      <Badge
+        status="ok"
+        medianUsd={12400}
+        sampleSize={142}
+        deltaPercent={-8.4}
+        deltaAbsUsd={-1150}
+      />,
     );
     const text = container.textContent ?? "";
     expect(text).toContain("-8.4%");

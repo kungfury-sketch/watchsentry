@@ -87,3 +87,41 @@ describe("parseEbayListing — defensive paths", () => {
     expect(parseEbayListing(doc)).toBeNull();
   });
 });
+
+function jsonLdConditionDoc(itemCondition: string): string {
+  return `<!doctype html><html><head><script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "Rolex Submariner 116610LN",
+    brand: { "@type": "Brand", name: "Rolex" },
+    mpn: "116610LN",
+    offers: { "@type": "Offer", price: "11250", priceCurrency: "USD", itemCondition },
+  })}</script></head><body></body></html>`;
+}
+
+function specificsConditionDoc(condition: string): string {
+  const row = (label: string, value: string) =>
+    `<div class="ux-layout-section__row"><div class="ux-labels-values__labels">${label}</div><div class="ux-labels-values__values">${value}</div></div>`;
+  return `<!doctype html><html><body>${row("Brand", "Rolex")}${row("Reference Number", "5513")}${row("Condition", condition)}<span class="x-price-primary">$24,500</span></body></html>`;
+}
+
+describe("parseEbayListing — condition mapping", () => {
+  it.each([
+    ["https://schema.org/NewCondition", "new"],
+    ["https://schema.org/RefurbishedCondition", "very_good"],
+    ["https://schema.org/DamagedCondition", "fair"],
+    ["http://schema.org/NewCondition", "new"], // http variant — regression guard
+  ])("maps JSON-LD itemCondition %s -> %s", (cond, tier) => {
+    expect(parse(jsonLdConditionDoc(cond))?.conditionTier).toBe(tier);
+  });
+
+  it.each([
+    ["Brand New", "new"],
+    ["New (Other)", "unworn"],
+    ["Unworn", "unworn"],
+    ["Excellent condition", "very_good"],
+    ["For parts or not working", "fair"],
+  ])("maps item-specifics Condition '%s' -> %s", (cond, tier) => {
+    expect(parse(specificsConditionDoc(cond))?.conditionTier).toBe(tier);
+  });
+});

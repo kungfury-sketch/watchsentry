@@ -65,7 +65,8 @@ export function Badge(props: BadgeProps) {
             {props.deltaAbsUsd !== undefined && props.deltaAbsUsd !== 0 && (
               <span class="ws-delta-abs">
                 {" · $"}
-                {Math.abs(props.deltaAbsUsd).toLocaleString()} {props.deltaAbsUsd < 0 ? "below" : "above"}
+                {Math.abs(props.deltaAbsUsd).toLocaleString()}{" "}
+                {props.deltaAbsUsd < 0 ? "below" : "above"}
               </span>
             )}
           </strong>
