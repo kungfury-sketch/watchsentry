@@ -1,4 +1,5 @@
 import { parsePriceAndCurrency } from "./price";
+import { extractReferenceFromText } from "./reference";
 
 export type Chrono24SearchCard = {
   listingElement: HTMLElement;
@@ -88,11 +89,10 @@ function extractReference(el: HTMLElement): string | null {
   const explicit = fullText.match(/\bRef\.?\s+([0-9][A-Za-z0-9\-./]*)/i);
   if (explicit?.[1]) return explicit[1];
 
-  // Fallback 2: implicit reference in descriptive seller text — 5-7 digits with optional
-  // 1-4 letter suffix. Excludes 4-digit years (e.g. "2026") and short numbers (e.g. "41mm").
-  // Examples we catch: "Unworn 2026 / 124060 - New style box", "Black Dial 124060", "41mm 124060 Oystersteel".
-  const implicit = fullText.match(/\b([0-9]{5,7}[A-Za-z]{0,4})\b/);
-  return implicit?.[1] ?? null;
+  // Fallback 2: implicit reference in descriptive seller text. Handles digit-leading
+  // (124060 / 126610LN), dotted Omega, 14-digit, slashed Patek, and letter-leading
+  // (Cartier/Breitling) shapes; skips 4-digit years and short numbers. [H5]
+  return extractReferenceFromText(fullText);
 }
 
 function extractCardPrice(el: HTMLElement): { price: number | null; currency: string | null } {

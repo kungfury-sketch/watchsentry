@@ -1,4 +1,5 @@
 import { parsePriceAndCurrency } from "./price";
+import { extractReferenceFromText } from "./reference";
 
 export type EbaySearchCard = {
   listingElement: HTMLElement;
@@ -84,9 +85,8 @@ function extractBrand(text: string): string | null {
 }
 
 function extractReference(title: string): string | null {
-  // 5-7 digit core with optional 1-4 letter dial-code suffix; skips 4-digit years.
-  const m = title.match(/\b([0-9]{5,7}[A-Za-z]{0,4})\b/);
-  return m?.[1] ?? null;
+  // Digit-leading, dotted, 14-digit, slashed, or letter-leading ref shapes. [H5]
+  return extractReferenceFromText(title);
 }
 
 function extractModel(title: string, brand: string): string | null {

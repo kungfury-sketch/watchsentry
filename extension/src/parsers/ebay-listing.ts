@@ -1,4 +1,5 @@
 import { parsePriceAndCurrency } from "./price";
+import { extractReferenceFromText } from "./reference";
 
 export type EbayListing = {
   brand: string;
@@ -103,12 +104,11 @@ function findProduct(node: any): any | null {
   return null;
 }
 
-// Fallback ref extraction from a title string — pulls a 5-7 digit core with optional 1-4
-// letter dial-code suffix. Skips 4-digit years.
+// Fallback ref extraction from a title (used only when JSON-LD lacks mpn/sku). Handles
+// digit-leading, dotted, 14-digit, slashed, and letter-leading ref shapes. [H5]
 function extractRefFromTitle(title: string | undefined): string | null {
   if (!title) return null;
-  const m = title.match(/\b([0-9]{5,7}[A-Za-z]{0,4})\b/);
-  return m?.[1] ?? null;
+  return extractReferenceFromText(title);
 }
 
 function parsePrice(text: string | undefined): number | null {
