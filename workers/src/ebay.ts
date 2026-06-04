@@ -51,7 +51,7 @@ export function conditionFromTitle(title: string | undefined): ConditionTier | n
 const PRICE_RANGE_LOW = 0.25;
 const PRICE_RANGE_HIGH = 4;
 
-export function filterByPriceRange(comps: SoldComp[]): SoldComp[] {
+export function filterByPriceRange<T extends { soldPriceUsd: number }>(comps: T[]): T[] {
   if (comps.length < 4) return comps;
   const prices = comps.map((c) => c.soldPriceUsd).sort((a, b) => a - b);
   const mid = Math.floor(prices.length / 2);

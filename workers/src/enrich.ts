@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ConditionTier } from "./ebay";
+import { type ConditionTier, filterByPriceRange } from "./ebay";
 import { type FairValue, computeFairValue } from "./fair-value";
 import { FX_CACHE_KEY, type FxRates, convertToUsd } from "./fx";
 import type { Env } from "./index";
@@ -167,7 +167,9 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
     ref.id,
     req.condition,
   );
-  const fv = computeFairValue(comps);
+  // Drop accessory/parts and multi-watch-lot outliers before the median. The ingest-time
+  // filter never touched legacy comps, so cleaning on read protects every reference. [H1]
+  const fv = computeFairValue(filterByPriceRange(comps));
   if (!fv) {
     const modelResp = await tryModelFallback(env, req, ref);
     if (modelResp) {
@@ -216,9 +218,12 @@ async function tryModelFallback(
     actualTier = "fair";
     tierFallbackUsed = true;
   }
-  if (comps.length < MODEL_FALLBACK_MIN_COMPS) return null;
+  // The model-level set spans every reference under brand+model, so the price cloud is
+  // wide; filter accessory/parts and lots before applying the confidence threshold. [H1]
+  const filtered = filterByPriceRange(comps);
+  if (filtered.length < MODEL_FALLBACK_MIN_COMPS) return null;
 
-  const fv = computeFairValue(comps);
+  const fv = computeFairValue(filtered);
   if (!fv) return null;
 
   return {
