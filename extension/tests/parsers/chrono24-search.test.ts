@@ -110,4 +110,12 @@ describe("parsePriceAndCurrency", () => {
   it("returns null price + null currency when there's no number or symbol", () => {
     expect(parsePriceAndCurrency("Price on request")).toEqual({ price: null, currency: null });
   });
+
+  it("pairs the amount with the detected currency symbol, not merely the first number [M5]", () => {
+    // "$" wins detection; the amount must be the one adjacent to "$", not the struck € price.
+    expect(parsePriceAndCurrency("Was €9,500 now $8,900")).toEqual({ price: 8900, currency: "USD" });
+    expect(parsePriceAndCurrency("$8,900 (was €9,500)")).toEqual({ price: 8900, currency: "USD" });
+    // Symbol-after-number still pairs correctly when a struck price precedes it.
+    expect(parsePriceAndCurrency("9.500 € statt 11.000 €")).toMatchObject({ currency: "EUR" });
+  });
 });
