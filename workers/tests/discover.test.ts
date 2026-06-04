@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { discoverRequestSchema, recordDiscovery } from "../src/discover";
+import {
+  DISCOVER_CAP_PER_IP_PER_DAY,
+  discoverRequestSchema,
+  recordDiscovery,
+  underDiscoverCap,
+} from "../src/discover";
 
 type RunMock = ReturnType<typeof vi.fn>;
 
@@ -68,5 +73,40 @@ describe("recordDiscovery", () => {
       reference: "311.30.42.30.01.005",
     });
     expect(captured[0]?.bindings).toEqual(["Omega", "Speedmaster", "311.30.42.30.01.005"]);
+  });
+});
+
+function mockKv() {
+  const store = new Map<string, string>();
+  const kv = {
+    get: vi.fn(async (k: string) => store.get(k) ?? null),
+    put: vi.fn(async (k: string, v: string) => {
+      store.set(k, v);
+    }),
+  } as unknown as KVNamespace;
+  return { kv, store };
+}
+
+const DAY = "2026-06-04";
+
+describe("underDiscoverCap (per-IP soft daily cap)", () => {
+  it("allows and counts calls under the cap", async () => {
+    const { kv, store } = mockKv();
+    expect(await underDiscoverCap(kv, "1.2.3.4", DAY)).toBe(true);
+    expect(await underDiscoverCap(kv, "1.2.3.4", DAY)).toBe(true);
+    expect(store.get(`discover:1.2.3.4:${DAY}`)).toBe("2");
+  });
+
+  it("blocks once the per-IP daily cap is reached", async () => {
+    const { kv, store } = mockKv();
+    store.set(`discover:1.2.3.4:${DAY}`, String(DISCOVER_CAP_PER_IP_PER_DAY));
+    expect(await underDiscoverCap(kv, "1.2.3.4", DAY)).toBe(false);
+  });
+
+  it("isolates the counter per IP and per day", async () => {
+    const { kv, store } = mockKv();
+    store.set(`discover:1.2.3.4:${DAY}`, String(DISCOVER_CAP_PER_IP_PER_DAY));
+    expect(await underDiscoverCap(kv, "5.6.7.8", DAY)).toBe(true);
+    expect(await underDiscoverCap(kv, "1.2.3.4", "2026-06-05")).toBe(true);
   });
 });

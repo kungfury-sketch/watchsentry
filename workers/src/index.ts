@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { runDailyRefresh } from "./cron";
-import { discoverRequestSchema, recordDiscovery } from "./discover";
+import { discoverRequestSchema, recordDiscovery, underDiscoverCap } from "./discover";
 import { enrich, enrichRequestSchema } from "./enrich";
 
 export type Env = {
@@ -43,6 +43,12 @@ app.post("/discover", async (c) => {
   const parsed = discoverRequestSchema.safeParse(body);
   if (!parsed.success) {
     return c.json({ error: "invalid_request", details: parsed.error.flatten() }, 400);
+  }
+  // Per-IP soft daily cap so the public, keyless endpoint can't be flooded to spam the
+  // candidate catalog or pin junk to the nightly validation queue. [H2]
+  const ip = c.req.header("cf-connecting-ip") ?? "unknown";
+  if (!(await underDiscoverCap(c.env.CACHE, ip))) {
+    return c.json({ ok: true, throttled: true });
   }
   await recordDiscovery(c.env.DB, parsed.data);
   return c.json({ ok: true });
