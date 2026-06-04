@@ -1252,3 +1252,10 @@ Workers **115 → 116** (+1 enrich integration). Extension **106 → 110** (+4: 
 Read this entry + `docs/audits/2026-06-04-comprehensive.md`. Baseline: Workers 116 / Ext 110 green; **6 unpushed local commits** (HEAD `7353207`); worker still `2ceeacd6` live (H1 NOT deployed). First: confirm push/deploy with the user. Then **[H4] SPA re-render** is the top autonomous item.
 
 ### Cost: $0. No deploys, no pushes, no new accounts.
+
+### Session 13 addendum — [H3] + [H4] shipped (same session, post-verification)
+After a full re-verification (all green; anonymity sweep clean; confirmed no NEW `omerprojects`/PII leaks in my files), the user said "continue working." Two more TDD commits:
+- `860f5ad` **[H3] atomic daily-cap upsert** — replaced `touchUser`'s racy SELECT-then-write with a single `INSERT … ON CONFLICT(anonymous_id) DO UPDATE … RETURNING` (the search fan-out could lose-update past the 200/day cap). Schema-confirmed `anonymous_id` is PK. Workers 116→**117**. DEPLOY-GATED. (Omit/rotate-`anonymousId` bypass still open — needs IP limiting.)
+- `07e9bf2` **[H4] content-script re-scan** on SPA navigation (eBay/Watchfinder client-side routing) + DOM mutation — extracted `scan()` (hostname-injectable), debounced MutationObserver + wrapped `pushState`/`replaceState`/`popstate`, `runListing` idempotency guard (skip if `#watchsentry-mount` exists; nav removes stale mount first). First orchestrator-path coverage (`tests/content/scan.test.ts`). Extension 110→**113**.
+
+**State now: 9 unpushed LOCAL commits (HEAD `07e9bf2`); Workers 117 / Ext 113 green; worker still `2ceeacd6` live.** Backlog narrowed to: [H2] `/discover` hardening, [M6]/[L5]/[L6] cron resilience, deferred parser fixes ([M5]/[H5]/[M7]/[L7]), cron + repo SQL tests. Still deploy-gated + unpushed; git-history scrub still pending.
