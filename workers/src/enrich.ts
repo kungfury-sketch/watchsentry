@@ -74,28 +74,24 @@ export async function touchUser(
   anonymousId: string,
   today: string = new Date().toISOString().slice(0, 10),
 ): Promise<{ count: number; capped: boolean }> {
-  const existing = await db
-    .prepare("SELECT enrichment_count_today, counter_day FROM users WHERE anonymous_id = ?")
-    .bind(anonymousId)
-    .first<{ enrichment_count_today: number; counter_day: string }>();
-
-  if (!existing) {
-    await db
-      .prepare(
-        "INSERT INTO users (anonymous_id, enrichment_count_today, counter_day) VALUES (?, ?, ?)",
-      )
-      .bind(anonymousId, 1, today)
-      .run();
-    return { count: 1, capped: false };
-  }
-
-  const count = existing.counter_day === today ? existing.enrichment_count_today + 1 : 1;
-  await db
+  // Single atomic upsert: insert-or-increment and RETURN the resulting count in one
+  // statement. A search page fans out dozens of concurrent /enrich calls; a SELECT-then-
+  // UPDATE would let two read the same count and both write count+1 (lost update), silently
+  // leaking past the daily cap. The CASE resets the counter on a new day. [H3]
+  const row = await db
     .prepare(
-      "UPDATE users SET enrichment_count_today = ?, counter_day = ?, last_seen_at = datetime('now') WHERE anonymous_id = ?",
+      `INSERT INTO users (anonymous_id, enrichment_count_today, counter_day, last_seen_at)
+       VALUES (?1, 1, ?2, datetime('now'))
+       ON CONFLICT(anonymous_id) DO UPDATE SET
+         enrichment_count_today =
+           CASE WHEN users.counter_day = ?2 THEN users.enrichment_count_today + 1 ELSE 1 END,
+         counter_day = ?2,
+         last_seen_at = datetime('now')
+       RETURNING enrichment_count_today AS count`,
     )
-    .bind(count, today, anonymousId)
-    .run();
+    .bind(anonymousId, today)
+    .first<{ count: number }>();
+  const count = row?.count ?? 1;
   return { count, capped: count > DAILY_ENRICHMENT_CAP };
 }
 
