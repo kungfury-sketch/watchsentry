@@ -129,6 +129,7 @@ async function runListing(settings: Settings, host: Host) {
         medianUsd={enriched.fairValue?.medianUsd}
         sampleSize={enriched.fairValue?.sampleSize}
         deltaPercent={enriched.delta?.percent}
+        deltaAbsUsd={enriched.delta?.absoluteUsd}
       />,
       mount,
     );

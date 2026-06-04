@@ -61,6 +61,12 @@
   font-size: 12px;
   font-weight: 400;
 }
+.ws-delta-abs {
+  font-weight: 400;
+  font-size: 12px;
+  color: rgba(127, 127, 127, 0.9);
+  letter-spacing: 0;
+}
 .ws-foot {
   color: rgba(127, 127, 127, 0.85);
   font-size: 11px;

@@ -39,6 +39,25 @@ describe("<Badge>", () => {
     expect(text).toContain("WatchSentry");
   });
 
+  it("shows the absolute dollar gap directionally (below market) in the ok state", () => {
+    const { container } = render(
+      <Badge status="ok" medianUsd={12400} sampleSize={142} deltaPercent={-8.4} deltaAbsUsd={-1150} />,
+    );
+    const text = container.textContent ?? "";
+    expect(text).toContain("-8.4%");
+    expect(text).toContain("1,150");
+    expect(text.toLowerCase()).toContain("below");
+  });
+
+  it("labels an over-market listing as 'above'", () => {
+    const { container } = render(
+      <Badge status="ok" medianUsd={10000} sampleSize={50} deltaPercent={12} deltaAbsUsd={1200} />,
+    );
+    const text = container.textContent ?? "";
+    expect(text.toLowerCase()).toContain("above");
+    expect(text).toContain("1,200");
+  });
+
   it("classifies delta tone correctly (good when <= -5%)", () => {
     const { container } = render(
       <Badge status="ok" medianUsd={9500} sampleSize={5} deltaPercent={-8} />,

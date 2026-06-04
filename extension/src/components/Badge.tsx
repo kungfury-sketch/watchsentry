@@ -5,6 +5,7 @@ export type BadgeProps = {
   medianUsd?: number;
   sampleSize?: number;
   deltaPercent?: number;
+  deltaAbsUsd?: number;
 };
 
 export function Badge(props: BadgeProps) {
@@ -61,6 +62,12 @@ export function Badge(props: BadgeProps) {
           <strong>
             {props.deltaPercent > 0 ? "+" : ""}
             {props.deltaPercent.toFixed(1)}%
+            {props.deltaAbsUsd !== undefined && props.deltaAbsUsd !== 0 && (
+              <span class="ws-delta-abs">
+                {" · $"}
+                {Math.abs(props.deltaAbsUsd).toLocaleString()} {props.deltaAbsUsd < 0 ? "below" : "above"}
+              </span>
+            )}
           </strong>
         </div>
       )}
