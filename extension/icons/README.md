@@ -1,17 +1,16 @@
-# Extension Icons — PLACEHOLDER
+# Extension Icons
 
-These three PNGs are 1×1 transparent stubs created during Phase 0 Task 3.1
-so `vite build` can complete. They satisfy the manifest schema but are visually
-empty.
-
-**MUST be replaced before CWS submission (Week 6 / Task 6.2).** Chrome Web Store
-requires distinctive icons that represent the brand. Suggested sizes:
+Production brand icons: a shield with a checkmark ("verified / safe to buy"), matching
+the landing-page mark. Referenced by `manifest.config.ts` and the popup header.
 
 | File | Size | Use |
 |---|---|---|
 | `16.png` | 16×16 | Toolbar favicon |
-| `48.png` | 48×48 | Extension management page |
+| `48.png` | 48×48 | Extension management page + popup header |
 | `128.png` | 128×128 | CWS listing + install prompt |
 
-Replace with branded artwork (e.g. a stylized "WS" monogram or a watch silhouette
-mark). Keep filenames identical so the manifest doesn't change.
+`candidates/` holds earlier icon explorations and is not referenced by the manifest.
+
+Keep these filenames stable so the manifest doesn't change. (Earlier Phase-0 builds shipped
+1×1 transparent stubs; those were replaced with the real artwork — this note corrects the
+prior placeholder warning.)

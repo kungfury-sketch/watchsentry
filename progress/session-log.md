@@ -1211,3 +1211,44 @@ Likely lanes the user will request:
 7. **If `wrangler deploy` fails auth `10000`** while D1 reads work → stale OAuth token → user `wrangler logout` + `wrangler login` ([[reference-wrangler-oauth-degraded]]).
 
 ### Cost surface this session: $0 (free-tier worker deploys, D1/KV writes within free tier, no new accounts, no domain spend).
+
+---
+
+## Session 13 — Full re-audit + trust/correctness fixes + landing redesign (2026-06-04)
+
+**Mode:** dispatching-parallel-agents (audit) + TDD + brainstorming (landing) + verification-before-completion. Autonomous-progress (user away: "remember everything, big audit, improve, focus on how it looks"). All HARD rules honored (no-cost, anonymity, isolation, skill-discipline). **Nothing pushed or deployed** — 6 LOCAL commits for user review.
+
+### Entry context
+Resumed from Session 12 (worker `2ceeacd6`; Workers 115 / Ext 106 green; CWS paused). Verified the baseline green (tests, typecheck, lint, build, health, clean tree) before touching anything.
+
+### Audit (read-only)
+3 parallel general-purpose agents (worker / extension / tests) + first-hand visual/UX/copy review. Full report: **`docs/audits/2026-06-04-comprehensive.md`**. Headline findings all re-verified against code. **Solid (left alone):** XSS posture (no unsafe DOM sinks; parsed page text never rendered back), money-path math (FX, weighted median, delta, cache-key excludes price), SQL parameterization, least-privilege manifest.
+
+### What shipped (6 commits, all LOCAL — `30a4c9a`..`7353207`)
+| SHA | What |
+|---|---|
+| `30a4c9a` | docs(audit): comprehensive 2026-06-04 audit |
+| `f97036e` | **[C1] CRITICAL** (TDD): Chrono24 search no longer fabricates a six-figure price from card text when the price `<p>` class is renamed — it was emitting the *reference number* as the price → false bright-red badge. Now fails closed (no price → no delta). |
+| `aac121d` | **feat(landing): premium redesign** + honesty + 3 marketplaces. Navy+emerald identity, shield-check inline-SVG mark, 2-col hero, faithful badge-preview mockup. Killed the "eBay **sold**-comps" dishonesty → "median of **active** eBay listings (asking prices)"; Chrono24-only → Chrono24+eBay+Watchfinder (index + terms). Legal pages inherit shared stylesheet via `.legal`. Rendered + verified (desktop/mobile, light/dark) via Claude Preview. |
+| `ac2c6c7` | fix(ext/popup): Chrono24-only copy → all 3 marketplaces |
+| `22c7e0d` | feat(ext) (TDD): **[M2]** AbortController timeout (8s) so a hung worker can't spin the badge forever; **[M3]** distinct Badge **"error"** state ("couldn't reach") wired into `runListing` catch (network/timeout/HTTP no longer masquerade as `no_data`); **[L3]** drop dead `listedPriceUsd` Badge prop; **[L8]** fix stale `priceFields` comment |
+| `7353207` | feat(workers) (TDD): **[H1]** apply `filterByPriceRange` on the **read path** (per-ref + model-fallback) — was ingest-only, so model-fallback medians spanned an unfiltered multi-ref price cloud and ~46.8k legacy comps were never cleaned. Generalized the filter + added an `enrich()` integration test. **DEPLOY-GATED.** |
+
+### Tests
+Workers **115 → 116** (+1 enrich integration). Extension **106 → 110** (+4: C1 regression, M2 ×2, M3). Both suites + typecheck + lint + ext build GREEN. Also fixed the icons/README stale "1×1 placeholder" claim (real shield-check icons are in place).
+
+### Open / backlog (prioritized — NOT done this session)
+**USER-GATED:** `git push` (6 commits, HEAD `7353207`); `wrangler deploy` (H1 is inert until then); deploy landing to CF Pages; git-**history** PII scrub (destructive); CWS submission.
+**AUTONOMOUS backlog (next session, by leverage):**
+1. **[H4]** content-script SPA re-render — MutationObserver + History (`pushState`/`popstate`) hook; badges never re-render on SPA nav (Watchfinder Angular, eBay client-side search). The `.ws-badge-compact` dedupe guard already anticipates re-runs. HIGH.
+2. **[H3]** atomic daily-cap UPSERT (`RETURNING`) + treat missing/rotated `anonymousId` as capped (racy + bypassable today).
+3. **[H2]** `/discover` hardening (unauth + uncapped + attacker-rankable nightly validation queue → burns eBay quota / promotes junk).
+4. **[M6]/[L5]/[L6]** cron resilience: guard `getEbayAppToken` + wrap `scheduled`; count `insertSoldComps` return in the promotion branch; best-effort `audit_log` writes.
+5. **Deferred parser fixes** (one focused pass; multi-file, regression risk): [M5] anchor price number to detected currency symbol / reject mixed-symbol; [H5] broaden ref regex (letter-leading + dotted/slashed: Cartier/Breitling/TAG/Patek/Omega); [M7] host-default currency; [L7] only mount search-card span when ok.
+6. **Tests:** content `main()`, cron `runDailyRefresh`, repo SQL-shape assertions; fix hollow tests (circular synthetic-fixture parser tests, disabled-parser coverage, loose `fair-value` "weights recent" assertion).
+7. **Real-DOM fixtures** (highest test value) — blocked: Chrono24 is Cloudflare-bot-protected to automation; eBay/Watchfinder need a Chrome-MCP domain grant while the user is present.
+
+### Next-session entry point
+Read this entry + `docs/audits/2026-06-04-comprehensive.md`. Baseline: Workers 116 / Ext 110 green; **6 unpushed local commits** (HEAD `7353207`); worker still `2ceeacd6` live (H1 NOT deployed). First: confirm push/deploy with the user. Then **[H4] SPA re-render** is the top autonomous item.
+
+### Cost: $0. No deploys, no pushes, no new accounts.
