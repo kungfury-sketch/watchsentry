@@ -39,10 +39,10 @@ const ANCHOR_SELECTORS: Record<Host, string[]> = {
 };
 
 // Normalizes whatever price fields a parser produced into the worker payload shape.
-// Chrono24 parsers emit listedPrice + listedCurrency (currency-aware); the other
-// marketplaces still emit listedPriceUsd. The union is structurally assignable here
-// because every field is optional. The worker prefers listedPriceUsd, else converts
-// listedPrice via the requested currency.
+// All active parsers (Chrono24, eBay, Watchfinder) emit listedPrice + listedCurrency
+// (currency-aware). listedPriceUsd is a legacy/back-compat field emitted only by the
+// dormant dealer parsers; the worker prefers it when present, else converts listedPrice
+// via the requested currency. Every field is optional, so the union is assignable here.
 function priceFields(p: {
   listedPriceUsd?: number | null;
   listedPrice?: number | null;
@@ -131,7 +131,10 @@ async function runListing(settings: Settings, host: Host) {
     );
   } catch (err) {
     log.error("enrich failed", err);
-    render(<Badge status="no_data" />, mount);
+    // Distinct from no_data ("we have no comps"): a thrown error means we couldn't reach
+    // the worker (network / timeout / non-2xx). Say so honestly instead of implying the
+    // watch has no data. [M3]
+    render(<Badge status="error" />, mount);
   }
 }
 

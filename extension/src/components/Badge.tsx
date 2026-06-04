@@ -1,9 +1,8 @@
 import "./badge.css";
 
 export type BadgeProps = {
-  status: "ok" | "no_data" | "unknown_reference" | "loading";
+  status: "ok" | "no_data" | "unknown_reference" | "loading" | "error";
   medianUsd?: number;
-  listedPriceUsd?: number;
   sampleSize?: number;
   deltaPercent?: number;
 };
@@ -28,6 +27,16 @@ export function Badge(props: BadgeProps) {
         <strong>WatchSentry</strong>
         <div class="ws-foot ws-foot-flush">
           Not enough recent listing data to estimate a price yet.
+        </div>
+      </div>
+    );
+  }
+  if (props.status === "error") {
+    return (
+      <div class="ws-badge ws-neutral">
+        <strong>WatchSentry</strong>
+        <div class="ws-foot ws-foot-flush">
+          Couldn't reach WatchSentry just now — try reloading the page.
         </div>
       </div>
     );

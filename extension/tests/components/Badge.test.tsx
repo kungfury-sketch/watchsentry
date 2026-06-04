@@ -18,18 +18,19 @@ describe("<Badge>", () => {
   it("renders an honest no_data message", () => {
     const { container } = render(<Badge status="no_data" />);
     const text = container.textContent ?? "";
-    expect(text.toLowerCase()).toMatch(/sold-comp|signal|data/);
+    expect(text.toLowerCase()).toMatch(/signal|data|enough/);
+  });
+
+  it("renders a distinct, honest 'could not reach' error state (separate from no_data)", () => {
+    const { container } = render(<Badge status="error" />);
+    const text = (container.textContent ?? "").toLowerCase();
+    expect(text).toContain("watchsentry");
+    expect(text).toMatch(/couldn.t reach|unavailable|try (again|reloading)/);
   });
 
   it("renders fair value and delta in the ok state with WatchSentry attribution", () => {
     const { container } = render(
-      <Badge
-        status="ok"
-        medianUsd={9500}
-        listedPriceUsd={8500}
-        sampleSize={12}
-        deltaPercent={-10.5}
-      />,
+      <Badge status="ok" medianUsd={9500} sampleSize={12} deltaPercent={-10.5} />,
     );
     const text = container.textContent ?? "";
     expect(text).toContain("9,500");

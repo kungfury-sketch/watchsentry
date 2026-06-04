@@ -20,16 +20,24 @@ export async function enrichListing(
     anonymousId?: string;
     model?: string;
   },
-  opts: { apiBase: string; fetchImpl?: typeof fetch },
+  opts: { apiBase: string; fetchImpl?: typeof fetch; timeoutMs?: number },
 ): Promise<EnrichResponse> {
   const fetchImpl = opts.fetchImpl ?? fetch;
-  const res = await fetchImpl(`${opts.apiBase}/enrich`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(`enrich error: ${res.status}`);
-  return (await res.json()) as EnrichResponse;
+  // Abort a hung request so the badge never spins on "WatchSentry…" forever.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 8000);
+  try {
+    const res = await fetchImpl(`${opts.apiBase}/enrich`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`enrich error: ${res.status}`);
+    return (await res.json()) as EnrichResponse;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Fire-and-forget candidate registration. Called when the extension sees a card with

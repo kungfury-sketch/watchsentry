@@ -31,4 +31,46 @@ describe("enrichListing", () => {
       ),
     ).rejects.toThrow(/enrich error: 500/);
   });
+
+  it("passes an abort signal to fetch so hung requests can time out", async () => {
+    let signal: AbortSignal | undefined;
+    const mock = vi.fn(async (_url: string | URL | Request, opts?: RequestInit) => {
+      signal = (opts?.signal as AbortSignal | undefined) ?? undefined;
+      return new Response(
+        JSON.stringify({
+          status: "ok",
+          fairValue: { medianUsd: 1, sampleSize: 1, windowDays: 90 },
+        }),
+        { status: 200 },
+      );
+    });
+    await enrichListing(
+      { brand: "Rolex", reference: "124060", condition: "very_good" },
+      { apiBase: "https://api.example.com", fetchImpl: mock },
+    );
+    expect(signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("aborts a hung request once timeoutMs elapses", async () => {
+    vi.useFakeTimers();
+    try {
+      const mock = vi.fn(
+        (_url: string | URL | Request, opts?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            opts?.signal?.addEventListener("abort", () =>
+              reject(new DOMException("aborted", "AbortError")),
+            );
+          }),
+      );
+      const p = enrichListing(
+        { brand: "Rolex", reference: "124060", condition: "very_good" },
+        { apiBase: "https://api.example.com", fetchImpl: mock, timeoutMs: 5000 },
+      );
+      const settled = expect(p).rejects.toThrow();
+      await vi.advanceTimersByTimeAsync(5001);
+      await settled;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
