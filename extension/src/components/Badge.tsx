@@ -1,4 +1,5 @@
 import "./badge.css";
+import { confidenceLabel, confidenceTier } from "./confidence";
 
 export type BadgeProps = {
   status: "ok" | "no_data" | "unknown_reference" | "loading" | "error";
@@ -6,6 +7,10 @@ export type BadgeProps = {
   sampleSize?: number;
   deltaPercent?: number;
   deltaAbsUsd?: number;
+  // Interquartile typical-price band from the worker (optional — older/cached responses omit
+  // it, in which case the range row is hidden and confidence falls back to sample-size only).
+  rangeLowUsd?: number;
+  rangeHighUsd?: number;
 };
 
 export function Badge(props: BadgeProps) {
@@ -50,12 +55,28 @@ export function Badge(props: BadgeProps) {
         : props.deltaPercent >= 10
           ? "bad"
           : "neutral";
+  const tier = confidenceTier({
+    sampleSize: props.sampleSize,
+    rangeLowUsd: props.rangeLowUsd,
+    rangeHighUsd: props.rangeHighUsd,
+    medianUsd: props.medianUsd,
+  });
   return (
     <div class={`ws-badge ws-${tone}`}>
       <div class="ws-row">
         <span class="ws-label">Fair value</span>
         <strong>${props.medianUsd?.toLocaleString()}</strong>
       </div>
+      {props.rangeLowUsd !== undefined &&
+        props.rangeHighUsd !== undefined &&
+        props.rangeHighUsd > props.rangeLowUsd && (
+          <div class="ws-row">
+            <span class="ws-label">Typical range</span>
+            <span class="ws-range">
+              ${props.rangeLowUsd.toLocaleString()} – ${props.rangeHighUsd.toLocaleString()}
+            </span>
+          </div>
+        )}
       {props.deltaPercent !== undefined && (
         <div class="ws-row">
           <span class="ws-label">Listing vs fair</span>
@@ -73,8 +94,8 @@ export function Badge(props: BadgeProps) {
         </div>
       )}
       <div class="ws-foot">
-        <span class="ws-foot-brand">WatchSentry</span> · {props.sampleSize} active listing
-        {props.sampleSize === 1 ? "" : "s"} · 90d
+        <span class="ws-foot-brand">WatchSentry</span> · {confidenceLabel(tier)} ·{" "}
+        {props.sampleSize} active listing{props.sampleSize === 1 ? "" : "s"} · 90d
       </div>
     </div>
   );

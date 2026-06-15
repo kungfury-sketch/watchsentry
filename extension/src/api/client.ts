@@ -1,6 +1,14 @@
 export type EnrichResponse = {
   status: "ok" | "no_data" | "unknown_reference";
-  fairValue?: { medianUsd: number; sampleSize: number; windowDays: number };
+  fairValue?: {
+    medianUsd: number;
+    sampleSize: number;
+    windowDays: number;
+    // Interquartile typical-price band (p25-p75). Optional: cached responses from before the
+    // 2026-06-15 confidence-indicator change won't carry it.
+    rangeLowUsd?: number;
+    rangeHighUsd?: number;
+  };
   delta?: { absoluteUsd: number; percent: number };
   reference?: { brand: string; model: string; displayName: string };
   modelFallback?: boolean;

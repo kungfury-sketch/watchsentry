@@ -138,6 +138,8 @@ async function runListing(settings: Settings, host: Host, defaultCurrency: strin
         sampleSize={enriched.fairValue?.sampleSize}
         deltaPercent={enriched.delta?.percent}
         deltaAbsUsd={enriched.delta?.absoluteUsd}
+        rangeLowUsd={enriched.fairValue?.rangeLowUsd}
+        rangeHighUsd={enriched.fairValue?.rangeHighUsd}
       />,
       mount,
     );

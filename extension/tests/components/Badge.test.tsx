@@ -77,4 +77,48 @@ describe("<Badge>", () => {
     );
     expect(container.querySelector(".ws-bad")).not.toBeNull();
   });
+
+  it("renders the typical price range when the worker provides it", () => {
+    const { container } = render(
+      <Badge
+        status="ok"
+        medianUsd={14255}
+        sampleSize={375}
+        rangeLowUsd={13253}
+        rangeHighUsd={15160}
+        deltaPercent={-5}
+      />,
+    );
+    const text = container.textContent ?? "";
+    expect(text.toLowerCase()).toContain("typical range");
+    expect(text).toContain("13,253");
+    expect(text).toContain("15,160");
+  });
+
+  it("shows a high-confidence cue for a large, tight sample", () => {
+    const { container } = render(
+      <Badge
+        status="ok"
+        medianUsd={14255}
+        sampleSize={375}
+        rangeLowUsd={13253}
+        rangeHighUsd={15160}
+      />,
+    );
+    expect((container.textContent ?? "").toLowerCase()).toContain("high confidence");
+  });
+
+  it("shows a limited-confidence cue for a thin sample", () => {
+    const { container } = render(
+      <Badge status="ok" medianUsd={8100} sampleSize={10} rangeLowUsd={7900} rangeHighUsd={8300} />,
+    );
+    expect((container.textContent ?? "").toLowerCase()).toContain("limited confidence");
+  });
+
+  it("omits the typical-range row when the worker sends no range (back-compat)", () => {
+    const { container } = render(
+      <Badge status="ok" medianUsd={9500} sampleSize={50} deltaPercent={-5} />,
+    );
+    expect((container.textContent ?? "").toLowerCase()).not.toContain("typical range");
+  });
 });
