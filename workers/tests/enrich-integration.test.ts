@@ -27,6 +27,64 @@ function fakeEnv(modelComps: Array<{ sold_price_usd: number; sold_at: string }>)
   } as unknown as Env;
 }
 
+// Per-ref Env: findReference (.first) returns a ref so the per-ref path runs;
+// getFairValueInputsFor / getModelLevelComps (.all) return the supplied comps.
+function fakeEnvPerRef(comps: Array<{ sold_price_usd: number; sold_at: string }>): Env {
+  const ref = {
+    id: 1,
+    brand: "Cartier",
+    model: "Santos",
+    reference_number: "WSSA0009",
+    display_name: "Cartier Santos WSSA0009",
+  };
+  return {
+    DB: {
+      prepare: (_sql: string) => ({
+        bind: (..._binds: unknown[]) => ({
+          first: async () => ref,
+          all: async () => ({ results: comps }),
+          run: async () => ({}),
+        }),
+      }),
+    },
+    CACHE: { get: async () => null, put: async () => {} },
+    EBAY_APP_ID: "x",
+    EBAY_CERT_ID: "x",
+  } as unknown as Env;
+}
+
+describe("enrich() suppresses thin per-ref samples [data-accuracy]", () => {
+  it("returns no_data when a known ref has too few comps to trust the median", async () => {
+    // 5 recent comps clears computeFairValue but is below the confidence floor — a single
+    // listing is 20% of the sample and would swing the median. The model fallback (same 5
+    // comps here) is also too thin, so the honest answer is no_data, not a confident number.
+    const comps = [7900, 8000, 8100, 8200, 8300].map((p) => ({
+      sold_price_usd: p,
+      sold_at: RECENT,
+    }));
+    const res = await enrich(fakeEnvPerRef(comps), {
+      brand: "Cartier",
+      reference: "WSSA0009",
+      condition: "good",
+    });
+    expect(res.status).toBe("no_data");
+  });
+
+  it("returns ok when a known ref clears the confidence floor", async () => {
+    const comps = [7600, 7700, 7800, 7900, 8000, 8100, 8200, 8300, 8400, 8500].map((p) => ({
+      sold_price_usd: p,
+      sold_at: RECENT,
+    }));
+    const res = await enrich(fakeEnvPerRef(comps), {
+      brand: "Cartier",
+      reference: "WSSA0009",
+      condition: "good",
+    });
+    expect(res.status).toBe("ok");
+    expect(res.fairValue?.sampleSize).toBe(10);
+  });
+});
+
 describe("enrich() applies the price-range filter on the read path [H1]", () => {
   it("drops junk-priced comps from the model-level fair value", async () => {
     const comps = [

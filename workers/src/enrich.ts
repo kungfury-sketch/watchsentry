@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type ConditionTier, filterByPriceRange } from "./ebay";
+import { type ConditionTier, filterPriceOutliers } from "./ebay";
 import { type FairValue, computeFairValue } from "./fair-value";
 import { FX_CACHE_KEY, type FxRates, convertToUsd } from "./fx";
 import type { Env } from "./index";
@@ -37,6 +37,15 @@ export type EnrichResponse = {
 // Per-ref median uses LIMIT 500; we set this higher than computeFairValue's own threshold
 // to avoid badging on thin/noisy model-wide data.
 const MODEL_FALLBACK_MIN_COMPS = 50;
+
+// Minimum per-ref comps (post-90-day-window) before we trust the median enough to badge it.
+// Below this a single listing is a large fraction of the sample and swings the value, so we
+// fall through to the wider model-level pool and ultimately to an honest "not enough data"
+// rather than show a confident-looking but noisy number. It's lower than the model-level
+// floor because a same-reference sample is far more homogeneous than a model-wide one — the
+// eBay category filter (live since the 2026-06-15 accuracy pass) thinned some refs to single
+// digits, which is exactly the noise this suppresses. [data-accuracy]
+const PER_REF_MIN_COMPS = 8;
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
 const DAILY_ENRICHMENT_CAP = 200;
@@ -163,10 +172,12 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
     ref.id,
     req.condition,
   );
-  // Drop accessory/parts and multi-watch-lot outliers before the median. The ingest-time
-  // filter never touched legacy comps, so cleaning on read protects every reference. [H1]
-  const fv = computeFairValue(filterByPriceRange(comps));
-  if (!fv) {
+  // Drop accessory/parts, multi-watch-lot, and same-ref variant outliers before the median
+  // (ingest-time filtering never touched legacy comps, so we clean on read), then require a
+  // minimum sample so a thin set doesn't produce a confident-looking but noisy value. Both
+  // conditions fall through to the model-level pool, then to no_data. [H1][data-accuracy]
+  const fv = computeFairValue(filterPriceOutliers(comps));
+  if (!fv || fv.sampleSize < PER_REF_MIN_COMPS) {
     const modelResp = await tryModelFallback(env, req, ref);
     if (modelResp) {
       await env.CACHE.put(cacheKey, JSON.stringify(modelResp), {
@@ -216,7 +227,7 @@ async function tryModelFallback(
   }
   // The model-level set spans every reference under brand+model, so the price cloud is
   // wide; filter accessory/parts and lots before applying the confidence threshold. [H1]
-  const filtered = filterByPriceRange(comps);
+  const filtered = filterPriceOutliers(comps);
   if (filtered.length < MODEL_FALLBACK_MIN_COMPS) return null;
 
   const fv = computeFairValue(filtered);
