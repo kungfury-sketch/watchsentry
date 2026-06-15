@@ -20,6 +20,24 @@ describe("computeFairValue", () => {
     expect(r?.sampleSize).toBe(2); // both counted → weighting, not filtering, is exercised
     expect(r?.medianUsd).toBe(10000); // the heavier recent comp wins the weighted median
   });
+  it("reports the interquartile typical-price range (p25-p75)", () => {
+    const now = new Date("2026-06-10T00:00:00Z").getTime();
+    const at = "2026-06-01T00:00:00Z"; // all in-window, same age → equal weights
+    const comps = [10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000].map((p) => ({
+      soldPriceUsd: p,
+      soldAt: at,
+    }));
+    const r = computeFairValue(comps, now);
+    expect(r?.rangeLowUsd).toBe(12000); // p25
+    expect(r?.rangeHighUsd).toBe(16000); // p75
+  });
+
+  it("collapses the range to the single value for a one-comp reference", () => {
+    const r = computeFairValue([{ soldPriceUsd: 9000, soldAt: "2026-05-01T00:00:00Z" }]);
+    expect(r?.rangeLowUsd).toBe(9000);
+    expect(r?.rangeHighUsd).toBe(9000);
+  });
+
   it("ignores comps older than 90 days", () => {
     const recent = { soldPriceUsd: 10000, soldAt: "2026-05-15T00:00:00Z" };
     const ancient = { soldPriceUsd: 5000, soldAt: "2025-01-01T00:00:00Z" };
