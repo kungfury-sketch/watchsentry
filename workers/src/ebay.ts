@@ -43,25 +43,43 @@ export function conditionFromTitle(title: string | undefined): ConditionTier | n
   return null;
 }
 
-// Two-pass robust filter: compute the comps' median price, then drop any priced outside
-// [0.25x, 4x] of it. Removes clean-titled accessory/parts listings (straps, bezels,
-// bracelets priced far below the watch) and multi-watch lots (far above) that the
-// title-keyword outlier filter misses. The band is wide so genuine same-reference
-// listings are never dropped. No-op below 4 comps (the center isn't yet reliable).
-const PRICE_RANGE_LOW = 0.25;
-const PRICE_RANGE_HIGH = 4;
+// Two-layer robust outlier filter (a comp must pass BOTH layers):
+//   1. Coarse median band [0.25x, 4x] — kills gross junk (accessory/parts far below, multi-
+//      watch lots far above) that the title-keyword filter misses. Still works when the IQR
+//      collapses to zero because one price dominates >50% of the set.
+//   2. Fine Tukey IQR fence [Q1 - 1.5*IQR, Q3 + 1.5*IQR] — trims same-reference *variant*
+//      tails the wide band keeps: a $41k turquoise "Celebration" dial among $8-10k plain
+//      Oyster Perpetual 124300s, or a precious-metal Daytona among steel ones. These share
+//      the reference number but are a different watch and drag the median above the modal
+//      configuration. Skipped when IQR <= 0 (degenerate spread → razor fence would over-trim).
+// No-op below 4 comps, where neither centre nor quartiles are reliable. [data-quality]
+const IQR_FENCE_K = 1.5;
+const PRICE_BAND_LOW = 0.25;
+const PRICE_BAND_HIGH = 4;
+const MIN_COMPS_FOR_OUTLIER_FILTER = 4;
 
-export function filterByPriceRange<T extends { soldPriceUsd: number }>(comps: T[]): T[] {
-  if (comps.length < 4) return comps;
+export function filterPriceOutliers<T extends { soldPriceUsd: number }>(comps: T[]): T[] {
+  if (comps.length < MIN_COMPS_FOR_OUTLIER_FILTER) return comps;
   const prices = comps.map((c) => c.soldPriceUsd).sort((a, b) => a - b);
-  const mid = Math.floor(prices.length / 2);
-  const lower = prices[mid - 1] ?? 0;
-  const upper = prices[mid] ?? 0;
-  const median = prices.length % 2 === 1 ? upper : (lower + upper) / 2;
-  if (median <= 0) return comps;
-  const lo = median * PRICE_RANGE_LOW;
-  const hi = median * PRICE_RANGE_HIGH;
-  return comps.filter((c) => c.soldPriceUsd >= lo && c.soldPriceUsd <= hi);
+  const n = prices.length;
+  const mid = Math.floor(n / 2);
+  const median = n % 2 === 1 ? prices[mid] : ((prices[mid - 1] ?? 0) + (prices[mid] ?? 0)) / 2;
+  const q1 = prices[Math.min(n - 1, Math.floor(n * 0.25))] ?? 0;
+  const q3 = prices[Math.min(n - 1, Math.floor(n * 0.75))] ?? 0;
+  const iqr = q3 - q1;
+
+  const bandLo = (median ?? 0) > 0 ? (median ?? 0) * PRICE_BAND_LOW : Number.NEGATIVE_INFINITY;
+  const bandHi = (median ?? 0) > 0 ? (median ?? 0) * PRICE_BAND_HIGH : Number.POSITIVE_INFINITY;
+  const fenceLo = iqr > 0 ? q1 - IQR_FENCE_K * iqr : Number.NEGATIVE_INFINITY;
+  const fenceHi = iqr > 0 ? q3 + IQR_FENCE_K * iqr : Number.POSITIVE_INFINITY;
+
+  return comps.filter(
+    (c) =>
+      c.soldPriceUsd >= bandLo &&
+      c.soldPriceUsd <= bandHi &&
+      c.soldPriceUsd >= fenceLo &&
+      c.soldPriceUsd <= fenceHi,
+  );
 }
 
 export async function getEbayAppToken(
@@ -83,6 +101,17 @@ export async function getEbayAppToken(
   return data.access_token;
 }
 
+// ACCURACY NOTE — asking vs sold (measured 2026-06-15): the eBay Browse API returns ACTIVE
+// listings, i.e. current *asking* prices, not realized sale prices. Asking sits systematically
+// above sold (sellers list optimistically; stale inventory lingers high), so the fair value
+// derived here biases ~+5-15% versus true market on clean references, and more on hyped or
+// variant-heavy ones. filterPriceOutliers (IQR fence) and the per-ref sample floor (enrich.ts)
+// strip variant/junk contamination and thin-sample noise, but they cannot remove the
+// structural asking bias. The real fix is true sold-price data via eBay's Marketplace Insights
+// API (buy/marketplace_insights/v1/item_sales/search), which is access-restricted — the
+// operator must apply for it in the eBay developer program. Until then the delta (this listing
+// vs the typical asking price) is the sound apples-to-apples signal; the absolute is an upper
+// bound on market value, not a sold estimate.
 export async function fetchEbaySoldComps(args: {
   brand: string;
   reference: string;
@@ -124,5 +153,5 @@ export async function fetchEbaySoldComps(args: {
         : (conditionFromTitle(i.title) ?? "fair"),
       soldAt: i.itemEndDate ?? new Date().toISOString(),
     }));
-  return filterByPriceRange(comps);
+  return filterPriceOutliers(comps);
 }

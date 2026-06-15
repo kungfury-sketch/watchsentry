@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   conditionFromTitle,
   fetchEbaySoldComps,
-  filterByPriceRange,
+  filterPriceOutliers,
   getEbayAppToken,
   normalizeCondition,
 } from "../src/ebay";
@@ -181,7 +181,7 @@ describe("conditionFromTitle", () => {
   });
 });
 
-describe("filterByPriceRange", () => {
+describe("filterPriceOutliers", () => {
   const comp = (p: number) => ({
     sourceListingId: `c${p}`,
     soldPriceUsd: p,
@@ -189,8 +189,28 @@ describe("filterByPriceRange", () => {
     soldAt: "2026-06-01T00:00:00Z",
   });
 
+  it("drops a same-reference variant tail that the old wide [0.25x,4x] band would keep", () => {
+    // Eight plain ~$10k listings + one $40k variant (e.g. a turquoise/diamond-dial config
+    // sharing the reference number). The legacy band keeps anything under ~4x the median
+    // (~$40k), so the variant survives and inflates the median; IQR fences flag it as an
+    // outlier and drop it. This is the failure mode behind OP41 124300 / Datejust 126334.
+    const kept = filterPriceOutliers([
+      comp(9800),
+      comp(9900),
+      comp(9950),
+      comp(10000),
+      comp(10050),
+      comp(10100),
+      comp(10150),
+      comp(10200),
+      comp(40000),
+    ]).map((c) => c.soldPriceUsd);
+    expect(kept).not.toContain(40000);
+    expect(kept).toHaveLength(8);
+  });
+
   it("drops a low-priced accessory/part far below the watch cluster", () => {
-    const kept = filterByPriceRange([
+    const kept = filterPriceOutliers([
       comp(14000),
       comp(14500),
       comp(13800),
@@ -201,8 +221,8 @@ describe("filterByPriceRange", () => {
     expect(kept).toContain(14000);
   });
 
-  it("drops a high outlier far above the cluster (e.g. a multi-watch lot)", () => {
-    const kept = filterByPriceRange([
+  it("drops an extreme high outlier (e.g. a multi-watch lot)", () => {
+    const kept = filterPriceOutliers([
       comp(14000),
       comp(14500),
       comp(13800),
@@ -212,18 +232,39 @@ describe("filterByPriceRange", () => {
     expect(kept).not.toContain(95000);
   });
 
+  it("keeps a legitimate condition spread (worn to new) within the fences", () => {
+    // Real same-reference spread must not be over-trimmed — only genuine outliers go.
+    const kept = filterPriceOutliers([
+      comp(9000),
+      comp(9500),
+      comp(10000),
+      comp(10000),
+      comp(10500),
+      comp(11000),
+      comp(11500),
+      comp(12000),
+    ]);
+    expect(kept).toHaveLength(8);
+  });
+
   it("keeps everything when prices are tightly clustered", () => {
-    expect(filterByPriceRange([comp(14000), comp(14500), comp(13800), comp(14200)])).toHaveLength(
+    expect(filterPriceOutliers([comp(14000), comp(14500), comp(13800), comp(14200)])).toHaveLength(
       4,
     );
   });
 
   it("returns the input unchanged when there are too few comps to trust a center", () => {
-    expect(filterByPriceRange([comp(14000), comp(145), comp(300)])).toHaveLength(3);
+    expect(filterPriceOutliers([comp(14000), comp(145), comp(300)])).toHaveLength(3);
+  });
+
+  it("no-ops on a degenerate zero-spread distribution rather than razor-fencing it", () => {
+    expect(
+      filterPriceOutliers([comp(10000), comp(10000), comp(10000), comp(10000), comp(10000)]),
+    ).toHaveLength(5);
   });
 
   it("handles an empty list", () => {
-    expect(filterByPriceRange([])).toEqual([]);
+    expect(filterPriceOutliers([])).toEqual([]);
   });
 });
 
