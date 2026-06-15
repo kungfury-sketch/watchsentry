@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { chooseHost, chooseRoute } from "../../src/content/route";
+import { chooseHost, chooseRoute, defaultCurrencyForHost } from "../../src/content/route";
 
 const C24_LISTING = readFileSync(
   join(__dirname, "../fixtures/chrono24-listing-rolex-124060.html"),
@@ -75,5 +75,21 @@ describe("chooseRoute — ebay", () => {
   });
   it("returns 'none' on an eBay page with neither", () => {
     expect(chooseRoute(asDoc("<html><body><p>about</p></body></html>"), "ebay")).toBe("none");
+  });
+});
+
+describe("defaultCurrencyForHost", () => {
+  it("maps eBay TLDs to their listing currency", () => {
+    expect(defaultCurrencyForHost("www.ebay.com")).toBe("USD");
+    expect(defaultCurrencyForHost("www.ebay.co.uk")).toBe("GBP");
+    expect(defaultCurrencyForHost("www.ebay.de")).toBe("EUR");
+  });
+  it("maps Watchfinder TLDs", () => {
+    expect(defaultCurrencyForHost("www.watchfinder.co.uk")).toBe("GBP");
+    expect(defaultCurrencyForHost("www.watchfinder.com")).toBe("USD");
+  });
+  it("returns null for Chrono24 (multi-currency) and unknown hosts", () => {
+    expect(defaultCurrencyForHost("www.chrono24.com")).toBeNull();
+    expect(defaultCurrencyForHost("example.com")).toBeNull();
   });
 });

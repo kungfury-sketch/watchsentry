@@ -9,7 +9,7 @@ import { parseEbaySearch } from "../parsers/ebay-search";
 import { parseWatchfinderListing } from "../parsers/watchfinder-listing";
 import { parseWatchfinderSearch } from "../parsers/watchfinder-search";
 import { type Settings, getSettings } from "../storage";
-import { type Host, chooseHost, chooseRoute } from "./route";
+import { type Host, chooseHost, chooseRoute, defaultCurrencyForHost } from "./route";
 
 // Cut over to api.watchsentry.app once the custom Worker route is wired (Week 5).
 const API_BASE = "https://watchsentry-api.txrz.workers.dev";
@@ -43,15 +43,23 @@ const ANCHOR_SELECTORS: Record<Host, string[]> = {
 // (currency-aware). listedPriceUsd is a legacy/back-compat field emitted only by the
 // dormant dealer parsers; the worker prefers it when present, else converts listedPrice
 // via the requested currency. Every field is optional, so the union is assignable here.
-function priceFields(p: {
-  listedPriceUsd?: number | null;
-  listedPrice?: number | null;
-  listedCurrency?: string | null;
-}): { listedPriceUsd?: number; listedPrice?: number; listedCurrency?: string } {
+// `defaultCurrency` (from the host TLD) is applied only when the parser produced a price but
+// no currency — so a currency symbol missing from the price's DOM node doesn't silently drop
+// the delta. Exported for tests. [M7]
+export function priceFields(
+  p: {
+    listedPriceUsd?: number | null;
+    listedPrice?: number | null;
+    listedCurrency?: string | null;
+  },
+  defaultCurrency?: string | null,
+): { listedPriceUsd?: number; listedPrice?: number; listedCurrency?: string } {
+  const currency =
+    p.listedCurrency ?? (p.listedPrice != null ? (defaultCurrency ?? undefined) : undefined);
   return {
     listedPriceUsd: p.listedPriceUsd ?? undefined,
     listedPrice: p.listedPrice ?? undefined,
-    listedCurrency: p.listedCurrency ?? undefined,
+    listedCurrency: currency ?? undefined,
   };
 }
 
@@ -91,7 +99,7 @@ function parseHostSearch(host: Host) {
   }
 }
 
-async function runListing(settings: Settings, host: Host) {
+async function runListing(settings: Settings, host: Host, defaultCurrency: string | null) {
   // Idempotent: if a badge is already mounted (e.g. a MutationObserver re-fire on the same
   // listing), don't inject a second one. SPA route changes remove the stale mount first. [H4]
   if (document.getElementById("watchsentry-mount")) return;
@@ -110,7 +118,7 @@ async function runListing(settings: Settings, host: Host) {
       brand: parsed.brand,
       reference: parsed.referenceNumber,
       condition: parsed.conditionTier,
-      ...priceFields(parsed),
+      ...priceFields(parsed, defaultCurrency),
       anonymousId: settings.anonymousId,
       model: parsed.model,
     };
@@ -144,7 +152,7 @@ async function runListing(settings: Settings, host: Host) {
 
 const SEARCH_CONCURRENCY = 6;
 
-async function runSearch(settings: Settings, host: Host) {
+async function runSearch(settings: Settings, host: Host, defaultCurrency: string | null) {
   const cards = parseHostSearch(host)
     .slice(0, MAX_CARDS_PER_PAGE)
     .filter((c) => c.brand && c.referenceNumber);
@@ -160,7 +168,7 @@ async function runSearch(settings: Settings, host: Host) {
           brand: card.brand,
           reference: card.referenceNumber,
           condition: "very_good",
-          ...priceFields(card),
+          ...priceFields(card, defaultCurrency),
           anonymousId: settings.anonymousId,
           model: card.model ?? undefined,
         },
@@ -210,11 +218,12 @@ export async function scan(hostname: string = location.hostname): Promise<void> 
   const host = chooseHost(hostname);
   if (!host) return; // off-marketplace page (defensive; shouldn't happen under our matches)
 
+  const defaultCurrency = defaultCurrencyForHost(hostname);
   const route = chooseRoute(document, host);
   if (route === "listing") {
-    await runListing(settings, host);
+    await runListing(settings, host, defaultCurrency);
   } else if (route === "search") {
-    await runSearch(settings, host);
+    await runSearch(settings, host, defaultCurrency);
   }
 }
 

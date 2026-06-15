@@ -16,7 +16,7 @@ vi.mock("../../src/api/client", () => ({
 }));
 
 import { enrichListing } from "../../src/api/client";
-import { scan } from "../../src/content/index";
+import { priceFields, scan } from "../../src/content/index";
 
 const C24_LISTING = readFileSync(
   join(__dirname, "../fixtures/chrono24-listing-rolex-124060.html"),
@@ -80,5 +80,28 @@ describe("scan() — search", () => {
     await scan("www.chrono24.com");
     expect(document.querySelectorAll(".ws-badge-compact")).toHaveLength(0);
     expect(document.querySelectorAll("span:empty")).toHaveLength(0);
+  });
+});
+
+describe("priceFields — host-default currency [M7]", () => {
+  it("keeps the parser's currency when present", () => {
+    expect(priceFields({ listedPrice: 5000, listedCurrency: "EUR" }, "GBP")).toMatchObject({
+      listedPrice: 5000,
+      listedCurrency: "EUR",
+    });
+  });
+  it("falls back to the host default when the parser found no currency", () => {
+    expect(priceFields({ listedPrice: 5000, listedCurrency: null }, "GBP")).toMatchObject({
+      listedPrice: 5000,
+      listedCurrency: "GBP",
+    });
+  });
+  it("does not invent a currency when there is no price", () => {
+    expect(priceFields({ listedCurrency: null }, "GBP").listedCurrency).toBeUndefined();
+  });
+  it("leaves the USD back-compat path untouched (no default applied)", () => {
+    const r = priceFields({ listedPriceUsd: 5000 }, "GBP");
+    expect(r.listedPriceUsd).toBe(5000);
+    expect(r.listedCurrency).toBeUndefined();
   });
 });

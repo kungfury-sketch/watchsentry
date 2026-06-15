@@ -22,6 +22,19 @@ export function chooseHost(hostname: string): Host | null {
   return null;
 }
 
+// Default listing currency by marketplace TLD — a fallback when a parser reads a price but
+// the currency symbol wasn't in the same DOM node, so the worker can still compute a delta.
+// Chrono24 is multi-currency (the listing currency varies), so it's never defaulted. [M7]
+export function defaultCurrencyForHost(hostname: string): string | null {
+  const h = hostname.toLowerCase();
+  if (/(^|\.)ebay\.co\.uk$/.test(h)) return "GBP";
+  if (/(^|\.)ebay\.de$/.test(h)) return "EUR";
+  if (/(^|\.)ebay\.com$/.test(h)) return "USD";
+  if (/(^|\.)watchfinder\.co\.uk$/.test(h)) return "GBP";
+  if (/(^|\.)watchfinder\.com$/.test(h)) return "USD";
+  return null;
+}
+
 // Content-based route dispatch within a host: tries listing-detail parser first, falls
 // back to search-results parser.
 export function chooseRoute(doc: Document, host: Host): Route {
