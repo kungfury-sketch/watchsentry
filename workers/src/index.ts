@@ -31,7 +31,7 @@ app.post("/enrich", async (c) => {
   if (!parsed.success) {
     return c.json({ error: "invalid_request", details: parsed.error.flatten() }, 400);
   }
-  const result = await enrich(c.env, parsed.data);
+  const result = await enrich(c.env, parsed.data, { ip: c.req.header("cf-connecting-ip") });
   return c.json(result);
 });
 

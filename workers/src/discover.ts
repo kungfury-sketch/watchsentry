@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { underDailyCap } from "./ratelimit";
 
 export const discoverRequestSchema = z.object({
   brand: z.string().min(1).max(50),
@@ -28,20 +29,15 @@ export async function recordDiscovery(db: D1Database, req: DiscoverRequest): Pro
 
 export const DISCOVER_CAP_PER_IP_PER_DAY = 100;
 
-// Per-IP soft daily cap (KV-backed) on /discover. The endpoint is public and keyless, so
-// without this an attacker could flood it to bloat candidate_refs and pin junk refs to the
-// front of the nightly eBay-validation queue. KV is eventually consistent, so this is a soft
-// cap — it raises the bar on casual/single-IP abuse without the cost of a strong counter. [H2]
+// Per-IP soft daily cap on /discover. The endpoint is public and keyless, so without this an
+// attacker could flood it to bloat candidate_refs and pin junk refs to the front of the
+// nightly eBay-validation queue. Counter semantics live in ratelimit.ts (shared with /enrich). [H2]
 export async function underDiscoverCap(
   kv: KVNamespace,
   ip: string,
   day: string = new Date().toISOString().slice(0, 10),
 ): Promise<boolean> {
-  const key = `discover:${ip}:${day}`;
-  const current = Number((await kv.get(key)) ?? "0");
-  if (current >= DISCOVER_CAP_PER_IP_PER_DAY) return false;
-  await kv.put(key, String(current + 1), { expirationTtl: 60 * 60 * 26 });
-  return true;
+  return underDailyCap(kv, "discover", ip, DISCOVER_CAP_PER_IP_PER_DAY, day);
 }
 
 export type CandidateRow = {

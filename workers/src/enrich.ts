@@ -4,6 +4,7 @@ import { type FairValue, computeFairValue } from "./fair-value";
 import { FX_CACHE_KEY, type FxRates, convertToUsd } from "./fx";
 import type { Env } from "./index";
 import { normalizeReferenceCandidates } from "./normalize";
+import { underDailyCap } from "./ratelimit";
 import { type WatchRef, findReference, getFairValueInputsFor, getModelLevelComps } from "./repo";
 
 export const enrichRequestSchema = z.object({
@@ -49,6 +50,11 @@ const PER_REF_MIN_COMPS = 8;
 
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
 const DAILY_ENRICHMENT_CAP = 200;
+
+// Per-IP ceiling on uncached /enrich calls. The anonymousId cap above is client-supplied and
+// omittable, so an IP-keyed cap closes the omit/rotate bypass. 2x the anonymousId cap so a
+// NAT-shared IP with a few real users never feels it (cache hits are unmetered anyway). [H2-deeper]
+export const ENRICH_CAP_PER_IP_PER_DAY = 400;
 
 export function enrichmentCacheKey(args: {
   brand: string;
@@ -132,7 +138,11 @@ async function resolveListedPriceForEnv(env: Env, req: EnrichRequest): Promise<n
   return resolveListedPriceUsd(req, rates);
 }
 
-export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichResponse> {
+export async function enrich(
+  env: Env,
+  req: EnrichRequest,
+  meta?: { ip?: string },
+): Promise<EnrichResponse> {
   const listedPriceUsd = await resolveListedPriceForEnv(env, req);
   const cacheKey = enrichmentCacheKey({
     brand: req.brand,
@@ -140,9 +150,14 @@ export async function enrich(env: Env, req: EnrichRequest): Promise<EnrichRespon
     condition: req.condition,
   });
 
-  // Cache hits don't count toward the daily cap — the cap protects D1 work, not KV reads.
+  // Cache hits don't count toward the daily caps — the caps protect D1 work, not KV reads.
   const cached = await env.CACHE.get<EnrichResponse>(cacheKey, "json");
   if (cached) return maybeAttachDelta(cached, listedPriceUsd);
+
+  // Fail-open when the IP header is absent (Cloudflare always sets it in production).
+  if (meta?.ip && !(await underDailyCap(env.CACHE, "enrich", meta.ip, ENRICH_CAP_PER_IP_PER_DAY))) {
+    return { status: "no_data" };
+  }
 
   if (req.anonymousId) {
     const u = await touchUser(env.DB, req.anonymousId);
